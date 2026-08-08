@@ -6,4 +6,4 @@
 
 ### Added
 
-- Initial `@dotkaio/dot-coding-agent` release.
+- Initial `@dotkaio/dot` release.

@@ -1,5 +1,5 @@
 {
-	"name": "@dotkaio/dot-coding-agent",
+	"name": "@dotkaio/dot",
 	"version": "0.0.1",
 	"description": "Dot terminal coding harness",
 	"type": "module",

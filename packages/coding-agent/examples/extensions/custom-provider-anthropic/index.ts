@@ -23,6 +23,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { ContentBlockParam, MessageCreateParamsStreaming } from "@anthropic-ai/sdk/resources/messages.js";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import {
 	type Api,
 	type AssistantMessage,
@@ -43,7 +44,6 @@ import {
 	type ToolCall,
 	type ToolResultMessage,
 } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
 
 // =============================================================================
 // OAuth implementation adapted for the legacy extension compatibility interface.

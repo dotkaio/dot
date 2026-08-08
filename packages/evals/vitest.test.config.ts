@@ -8,7 +8,7 @@ export default mergeConfig(
 			include: ["test/**/*.test.ts"],
 		},
 		resolve: {
-			alias: [{ find: /^@dotkaio\/dot-coding-agent$/, replacement: workspaceSourcePaths.codingAgentIndex }],
+			alias: [{ find: /^@dotkaio\/dot$/, replacement: workspaceSourcePaths.codingAgentIndex }],
 		},
 	}),
 );

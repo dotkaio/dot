@@ -7,7 +7,7 @@
  * Usage: /status [message] - sends a status message with custom rendering
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Box, Text } from "@dotkaio/dot-tui";
 
 export default function (dot: ExtensionAPI) {

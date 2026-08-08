@@ -9,6 +9,7 @@
  *   # Then /login gitlab-duo, or set GITLAB_TOKEN=glpat-...
  */
 
+import type { ExtensionAPI } from "@dotkaio/dot";
 import {
 	type Api,
 	type AssistantMessageEventStream,
@@ -22,7 +23,6 @@ import {
 	type SimpleStreamOptions,
 	type ThinkingLevelMap,
 } from "@dotkaio/dot-ai/compat";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
 
 // =============================================================================
 // Constants

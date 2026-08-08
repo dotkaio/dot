@@ -7,7 +7,7 @@
  * Usage: /session-name [name] - set or show session name
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	dot.registerCommand("session-name", {

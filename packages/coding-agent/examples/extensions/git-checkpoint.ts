@@ -5,7 +5,7 @@
  * When forking, offers to restore code to that point in history.
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	const checkpoints = new Map<string, string>();

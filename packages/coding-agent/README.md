@@ -1,6 +1,6 @@
 # Dot Coding Agent
 
-[![npm](https://img.shields.io/npm/v/@dotkaio/dot-coding-agent?style=flat-square)](https://www.npmjs.com/package/@dotkaio/dot-coding-agent)
+[![npm](https://img.shields.io/npm/v/@dotkaio/dot?style=flat-square)](https://www.npmjs.com/package/@dotkaio/dot)
 
 Dot is a minimal terminal coding harness. Adapt dot to your workflows, not the other way around, without having to fork and modify dot internals. Extend it with TypeScript [Extensions](#extensions), [Skills](#skills), [Prompt Templates](#prompt-templates), and [Themes](#themes). Put your extensions, skills, prompt templates, and themes in [Dot Packages](#dot-packages) and share them with others via npm or git.
 
@@ -37,7 +37,7 @@ Dot runs in four modes: interactive, print or JSON, RPC for process integration,
 ## Quick Start
 
 ```bash
-npm install -g --ignore-scripts @dotkaio/dot-coding-agent
+npm install -g --ignore-scripts @dotkaio/dot
 ```
 
 `--ignore-scripts` disables dependency lifecycle scripts during install. Dot does not require install scripts for normal npm installs.
@@ -282,7 +282,7 @@ Use `/trust` in interactive mode to save a project trust decision for future ses
 
 ### Provider attribution and update checks
 
-- **Update check:** queries the npm registry for the latest `@dotkaio/dot-coding-agent` version. Disable it with `DOT_SKIP_VERSION_CHECK=1`.
+- **Update check:** queries the npm registry for the latest `@dotkaio/dot` version. Disable it with `DOT_SKIP_VERSION_CHECK=1`.
 - **Provider attribution:** supported providers can receive headers identifying Dot. Disable them with `enableProviderAttribution: false` in `settings.json` or `DOT_PROVIDER_ATTRIBUTION=0`.
 
 Use `--offline` or `DOT_OFFLINE=1` to disable startup network operations, including update checks, package update checks, and model-catalog refreshes.
@@ -432,7 +432,7 @@ See [docs/packages.md](docs/packages.md).
 ### SDK
 
 ```typescript
-import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create();
 const { session } = await createAgentSession({

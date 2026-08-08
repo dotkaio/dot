@@ -3,7 +3,6 @@ import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
-import { contentText } from "@dotkaio/dot-ai";
 import {
 	type AgentSession,
 	type CreateAgentSessionOptions,
@@ -12,7 +11,8 @@ import {
 	ModelRuntime,
 	SessionManager,
 	SettingsManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
+import { contentText } from "@dotkaio/dot-ai";
 import {
 	createHarness,
 	type Harness,
@@ -253,7 +253,7 @@ export function createDotCodingAgentHarness<TOutput extends JsonValue>(
 	options: DotCodingAgentHarnessOptions | DotCodingAgentHarnessWithOutput<TOutput> = {},
 ) {
 	return createHarness<DotCodingAgentInput, string | TOutput>({
-		name: options.name ?? "dot-coding-agent",
+		name: options.name ?? "dot",
 		run: ({ input, signal, setArtifact }) => runDotCodingAgent(input, signal, setArtifact, options),
 	});
 }

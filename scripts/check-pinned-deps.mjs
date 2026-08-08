@@ -22,7 +22,7 @@ function collectPackageJsonFiles(directory) {
 }
 
 function isInternalWorkspaceDependency(name) {
-	return name.startsWith("@dotkaio/dot-");
+	return name === "@dotkaio/dot" || name.startsWith("@dotkaio/dot-");
 }
 
 function isNonRegistrySpecifier(specifier) {

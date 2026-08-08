@@ -7,7 +7,7 @@
  * Usage: dot -e ./model-status.ts
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	dot.on("model_select", async (event, ctx) => {

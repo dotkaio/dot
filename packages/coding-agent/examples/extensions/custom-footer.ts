@@ -8,8 +8,8 @@
  * Token stats come from ctx.sessionManager/ctx.model (already accessible).
  */
 
+import type { ExtensionAPI } from "@dotkaio/dot";
 import type { AssistantMessage } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
 import { truncateToWidth, visibleWidth } from "@dotkaio/dot-tui";
 
 export default function (dot: ExtensionAPI) {

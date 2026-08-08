@@ -1,6 +1,6 @@
 # Examples
 
-Example code for dot-coding-agent SDK and extensions.
+Example code for dot SDK and extensions.
 
 ## Directories
 

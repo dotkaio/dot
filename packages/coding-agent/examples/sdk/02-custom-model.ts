@@ -4,7 +4,7 @@
  * Shows how to select a specific model and thinking level.
  */
 
-import { createAgentSession, ModelRuntime } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, ModelRuntime } from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create();
 

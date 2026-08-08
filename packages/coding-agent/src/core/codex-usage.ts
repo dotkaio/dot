@@ -67,7 +67,7 @@ export async function fetchCodexWeeklyRemainingPercent(
 			Authorization: `Bearer ${accessToken}`,
 			"ChatGPT-Account-Id": getAccountId(accessToken),
 			Accept: "application/json",
-			"User-Agent": "dot-coding-agent",
+			"User-Agent": "dot",
 		},
 	});
 	if (!response.ok) {

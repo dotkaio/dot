@@ -4,7 +4,7 @@
  * Usage: dot --extension ./examples/extensions/rainbow-editor.ts
  */
 
-import { CustomEditor, type ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import { CustomEditor, type ExtensionAPI } from "@dotkaio/dot";
 
 // Base colors (coral → yellow → green → teal → blue → purple → pink)
 const COLORS: [number, number, number][] = [

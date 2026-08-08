@@ -449,7 +449,7 @@ renderResult(result, options, theme, context) {
 **For Markdown**, use `getMarkdownTheme()`:
 
 ```typescript
-import { getMarkdownTheme } from "@dotkaio/dot-coding-agent";
+import { getMarkdownTheme } from "@dotkaio/dot";
 import { Markdown } from "@dotkaio/dot-tui";
 
 renderResult(result, options, theme, context) {
@@ -614,8 +614,8 @@ These patterns cover the most common UI needs in extensions. **Copy these patter
 For letting users pick from a list of options. Use `SelectList` from `@dotkaio/dot-tui` with `DynamicBorder` for framing.
 
 ```typescript
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
-import { DynamicBorder } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
+import { DynamicBorder } from "@dotkaio/dot";
 import { Container, type SelectItem, SelectList, Text } from "@dotkaio/dot-tui";
 
 dot.registerCommand("pick", {
@@ -674,7 +674,7 @@ dot.registerCommand("pick", {
 For operations that take time and should be cancellable. `BorderedLoader` shows a spinner and handles escape to cancel.
 
 ```typescript
-import { BorderedLoader } from "@dotkaio/dot-coding-agent";
+import { BorderedLoader } from "@dotkaio/dot";
 
 dot.registerCommand("fetch", {
   handler: async (_args, ctx) => {
@@ -706,7 +706,7 @@ dot.registerCommand("fetch", {
 For toggling multiple settings. Use `SettingsList` from `@dotkaio/dot-tui` with `getSettingsListTheme()`.
 
 ```typescript
-import { getSettingsListTheme } from "@dotkaio/dot-coding-agent";
+import { getSettingsListTheme } from "@dotkaio/dot";
 import { Container, type SettingItem, SettingsList, Text } from "@dotkaio/dot-tui";
 
 dot.registerCommand("settings", {
@@ -846,7 +846,7 @@ Token stats available via `ctx.sessionManager.getBranch()` and `ctx.model`.
 Replace the main input editor with a custom implementation. Useful for modal editing (vim), different keybindings (emacs), or specialized input handling.
 
 ```typescript
-import { CustomEditor, type ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import { CustomEditor, type ExtensionAPI } from "@dotkaio/dot";
 import { matchesKey, truncateToWidth } from "@dotkaio/dot-tui";
 
 type Mode = "normal" | "insert";

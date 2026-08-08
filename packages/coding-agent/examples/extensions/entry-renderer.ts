@@ -8,7 +8,7 @@
  * Usage: /status-card [message]
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Box, Text } from "@dotkaio/dot-tui";
 
 interface StatusCardData {

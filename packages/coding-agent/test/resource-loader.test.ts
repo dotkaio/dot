@@ -831,7 +831,7 @@ Content`,
 			writeFileSync(
 				join(ext1Dir, "index.ts"),
 				`
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "typebox";
 export default function(dot: ExtensionAPI) {
   dot.registerTool({
@@ -846,7 +846,7 @@ export default function(dot: ExtensionAPI) {
 			writeFileSync(
 				join(ext2Dir, "index.ts"),
 				`
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "typebox";
 export default function(dot: ExtensionAPI) {
   dot.registerTool({
@@ -873,7 +873,7 @@ export default function(dot: ExtensionAPI) {
 			writeFileSync(
 				join(globalExtDir, "global.ts"),
 				`
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "typebox";
 export default function(dot: ExtensionAPI) {
   dot.registerTool({
@@ -892,7 +892,7 @@ export default function(dot: ExtensionAPI) {
 			writeFileSync(
 				explicitExtPath,
 				`
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "typebox";
 export default function(dot: ExtensionAPI) {
   dot.registerTool({

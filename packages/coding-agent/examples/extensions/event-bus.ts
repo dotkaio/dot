@@ -7,7 +7,7 @@
  * Usage: /emit [event-name] [data] - emit an event on the bus
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	// Store ctx for use in event handler

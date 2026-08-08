@@ -34,7 +34,7 @@ Extensions can register either a complete dot-ai `Provider` or use the legacy pr
 
 ```typescript
 import { createProvider, openAICompletionsApi } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
   dot.registerProvider(createProvider({
@@ -125,7 +125,7 @@ To add a completely new provider, specify `models` along with the required confi
 If the model list comes from a remote endpoint, use an async extension factory:
 
 ```typescript
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default async function (dot: ExtensionAPI) {
   const response = await fetch("http://localhost:1234/v1/models");

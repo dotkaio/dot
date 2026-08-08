@@ -55,7 +55,7 @@ describe("extensions discovery", () => {
 		fs.writeFileSync(
 			path.join(extensionsDir, "coding-agent-import.ts"),
 			`
-				import { getAgentDir } from "@dotkaio/dot-coding-agent";
+				import { getAgentDir } from "@dotkaio/dot";
 				void getAgentDir;
 				export default function(dot) {
 					dot.registerCommand("test", { handler: async () => {} });

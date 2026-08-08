@@ -5,7 +5,7 @@
  * Useful to ensure work is committed before switching context.
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
 
 async function checkDirtyRepo(
 	dot: ExtensionAPI,

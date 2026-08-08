@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 export default function widgetPlacementExtension(dot: ExtensionAPI) {
 	dot.on("session_start", (_event, ctx) => {

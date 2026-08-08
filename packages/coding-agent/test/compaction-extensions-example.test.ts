@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ExtensionAPI, SessionBeforeCompactEvent, SessionCompactEvent } from "../src/core/extensions/index.ts";
 
-vi.mock("@dotkaio/dot-coding-agent", () => ({
+vi.mock("@dotkaio/dot", () => ({
 	convertToLlm: (messages: unknown) => messages,
 	serializeConversation: () => "conversation",
 }));

@@ -11,7 +11,7 @@ const packages = [
 	{ directory: "packages/client", name: "@dotkaio/dot-client" },
 	{ directory: "packages/storage/sqlite-node", name: "@dotkaio/dot-storage-sqlite-node" },
 	{ directory: "packages/tui", name: "@dotkaio/dot-tui" },
-	{ directory: "packages/coding-agent", name: "@dotkaio/dot-coding-agent" },
+	{ directory: "packages/coding-agent", name: "@dotkaio/dot" },
 ];
 
 const dryRun = process.argv.includes("--dry-run");

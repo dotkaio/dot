@@ -4,7 +4,7 @@ import type {
 	RpcExtensionUIRequest,
 	RpcExtensionUIResponse,
 	RpcResponse,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 import type {
 	ErrorResponse,
 	InstanceSummary,

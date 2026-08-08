@@ -85,8 +85,8 @@ jobs:
           VERSION="${VERSION#v}"  # Remove 'v' prefix
           node scripts/release-notes.mjs extract --version "${VERSION}" --tag "${RELEASE_TAG}" --out release-assets/RELEASE_NOTES.md
           node scripts/generate-coding-agent-install-lock.mjs --check
-          cp packages/coding-agent/install-lock/package.json release-assets/dot-coding-agent-install-package.json
-          cp packages/coding-agent/install-lock/package-lock.json release-assets/dot-coding-agent-install-package-lock.json
+          cp packages/coding-agent/install-lock/package.json release-assets/dot-install-package.json
+          cp packages/coding-agent/install-lock/package-lock.json release-assets/dot-install-package-lock.json
 
           cd packages/coding-agent/binaries
 
@@ -115,8 +115,8 @@ jobs:
             dot-linux-arm64.tar.gz
             dot-windows-x64.zip
             dot-windows-arm64.zip
-            dot-coding-agent-install-package.json
-            dot-coding-agent-install-package-lock.json
+            dot-install-package.json
+            dot-install-package-lock.json
           )
           sha256sum "${release_assets[@]}" > SHA256SUMS
 
@@ -160,8 +160,8 @@ jobs:
             dot-linux-arm64.tar.gz
             dot-windows-x64.zip
             dot-windows-arm64.zip
-            dot-coding-agent-install-package.json
-            dot-coding-agent-install-package-lock.json
+            dot-install-package.json
+            dot-install-package-lock.json
             SHA256SUMS
             RELEASE_NOTES.md
           )
@@ -190,8 +190,8 @@ jobs:
             dot-linux-arm64.tar.gz
             dot-windows-x64.zip
             dot-windows-arm64.zip
-            dot-coding-agent-install-package.json
-            dot-coding-agent-install-package-lock.json
+            dot-install-package.json
+            dot-install-package-lock.json
             SHA256SUMS
           )
 

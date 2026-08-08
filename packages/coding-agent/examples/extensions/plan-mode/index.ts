@@ -12,9 +12,9 @@
  * - Progress tracking widget during execution
  */
 
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
 import type { AgentMessage } from "@dotkaio/dot-agent-core";
 import type { AssistantMessage, TextContent } from "@dotkaio/dot-ai";
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
 import { Key } from "@dotkaio/dot-tui";
 import { extractTodoItems, isSafeCommand, markCompletedSteps, type TodoItem } from "./utils.ts";
 

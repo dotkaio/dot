@@ -859,7 +859,7 @@ export function getEditorBackground(text: string): string {
 // ============================================================================
 
 // Use globalThis to share theme across module loaders (tsx + jiti in dev mode)
-const THEME_KEY = Symbol.for("@dotkaio/dot-coding-agent:theme");
+const THEME_KEY = Symbol.for("@dotkaio/dot:theme");
 const THEME_KEY_OLD = Symbol.for("@dotkaio/dot-coding-agent:theme");
 
 // Export theme as a getter that reads from globalThis

@@ -18,7 +18,7 @@
  *   /thinking-label          Reset to the default label
  */
 
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
 
 const DEFAULT_LABEL = "Pondering...";
 

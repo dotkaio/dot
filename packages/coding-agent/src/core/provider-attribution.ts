@@ -57,7 +57,7 @@ function getDefaultAttributionHeaders(
 
 	if (isCloudflareModel(model)) {
 		return {
-			"User-Agent": "dot-coding-agent",
+			"User-Agent": "dot",
 		};
 	}
 

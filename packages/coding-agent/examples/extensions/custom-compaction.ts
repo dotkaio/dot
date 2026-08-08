@@ -13,9 +13,9 @@
  *   dot --extension examples/extensions/custom-compaction.ts
  */
 
+import type { ExtensionAPI } from "@dotkaio/dot";
+import { convertToLlm, serializeConversation } from "@dotkaio/dot";
 import { uuidv7 } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
-import { convertToLlm, serializeConversation } from "@dotkaio/dot-coding-agent";
 
 export default function (dot: ExtensionAPI) {
 	dot.on("session_before_compact", async (event, ctx) => {

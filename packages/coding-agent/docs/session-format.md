@@ -34,7 +34,7 @@ Source on GitHub ([dot](https://github.com/dotkaio/dot)):
 - [`packages/ai/src/types.ts`](https://github.com/dotkaio/dot/blob/main/packages/ai/src/types.ts) - Base message types (UserMessage, AssistantMessage, ToolResultMessage)
 - [`packages/agent/src/types.ts`](https://github.com/dotkaio/dot/blob/main/packages/agent/src/types.ts) - AgentMessage union type
 
-For TypeScript definitions in your project, inspect `node_modules/@dotkaio/dot-coding-agent/dist/` and `node_modules/@dotkaio/dot-ai/dist/`.
+For TypeScript definitions in your project, inspect `node_modules/@dotkaio/dot/dist/` and `node_modules/@dotkaio/dot-ai/dist/`.
 
 ## Message Types
 
@@ -119,7 +119,7 @@ interface Usage {
 
 The exported dot-ai `StopReason` type also includes `"pending"`, but that value is reserved for partial messages in streaming events. Terminal `done`/`error` messages replace it with a completion reason before dot persists the assistant message, so `"pending"` should never appear in session JSONL.
 
-### Extended Message Types (from dot-coding-agent)
+### Extended Message Types (from dot)
 
 ```typescript
 interface BashExecutionMessage {

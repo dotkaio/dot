@@ -61,8 +61,8 @@ const ExtensionAuthoringJudge = createJudge<DotCodingAgentInput, ExtensionAuthor
 				output.extensionSource.matchAll(/\b(?:from|import)\s+["']([^"']+)["']/g),
 				(match) => match[1],
 			);
-			if (!imports.includes("@dotkaio/dot-coding-agent")) {
-				failures.push("extension does not import the canonical @dotkaio/dot-coding-agent package");
+			if (!imports.includes("@dotkaio/dot")) {
+				failures.push("extension does not import the canonical @dotkaio/dot package");
 			}
 			if (imports.some((specifier) => specifier.startsWith("@sinclair/typebox"))) {
 				failures.push('extension imports legacy "@sinclair/typebox" instead of "typebox"');

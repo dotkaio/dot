@@ -16,7 +16,7 @@ See [examples/sdk/](../examples/sdk/) for working examples from minimal to full 
 ## Quick Start
 
 ```typescript
-import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create();
 const { session } = await createAgentSession({
@@ -36,7 +36,7 @@ await session.prompt("What files are in the current directory?");
 ## Installation
 
 ```bash
-npm install @dotkaio/dot-coding-agent
+npm install @dotkaio/dot
 ```
 
 The SDK is included in the main package. No separate installation needed.
@@ -50,7 +50,7 @@ The main factory function for a single `AgentSession`.
 `createAgentSession()` uses a `ResourceLoader` to supply extensions, skills, prompt templates, themes, and context files. If you do not provide one, it uses `DefaultResourceLoader` with standard discovery.
 
 ```typescript
-import { createAgentSession, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SessionManager } from "@dotkaio/dot";
 
 // Minimal: defaults with DefaultResourceLoader
 const { session } = await createAgentSession();
@@ -128,7 +128,7 @@ import {
   createAgentSessionServices,
   getAgentDir,
   SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
   const services = await createAgentSessionServices({ cwd });
@@ -368,7 +368,7 @@ When you pass a custom `ResourceLoader`, `cwd` and `agentDir` no longer control 
 
 ```typescript
 import { getModel } from "@dotkaio/dot-ai";
-import { ModelRuntime } from "@dotkaio/dot-coding-agent";
+import { ModelRuntime } from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create();
 
@@ -408,7 +408,7 @@ To match CLI model parsing, use the exported resolver helpers:
 import {
   resolveCliModel,
   resolveModelScopeWithDiagnostics,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const cliModel = resolveCliModel({
   cliModel: "anthropic/claude-opus-4-5:high",
@@ -440,7 +440,7 @@ Authentication resolution priority (handled by `ModelRuntime`):
 
 ```typescript
 import { InMemoryCredentialStore } from "@dotkaio/dot-ai";
-import { createAgentSession, ModelRuntime } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, ModelRuntime } from "@dotkaio/dot";
 
 // Default: uses ~/.dot/agent/auth.json and ~/.dot/agent/models.json
 const modelRuntime = await ModelRuntime.create();
@@ -476,7 +476,7 @@ const { session } = await createAgentSession({
 Use a `ResourceLoader` to override the system prompt:
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot";
 
 const loader = new DefaultResourceLoader({
   systemPromptOverride: () => "You are a helpful assistant.",
@@ -501,7 +501,7 @@ Specify which built-in tools to enable:
 The `edit` tool returns `details.diff` for Dot's TUI display and `details.patch` as a standard unified patch for SDK consumers.
 
 ```typescript
-import { createAgentSession } from "@dotkaio/dot-coding-agent";
+import { createAgentSession } from "@dotkaio/dot";
 
 // Read-only mode
 const { session } = await createAgentSession({
@@ -524,7 +524,7 @@ const { session } = await createAgentSession({
 When you pass a custom `cwd`, `createAgentSession()` builds selected built-in tools for that cwd.
 
 ```typescript
-import { createAgentSession, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SessionManager } from "@dotkaio/dot";
 
 const cwd = "/path/to/project";
 
@@ -548,7 +548,7 @@ const { session } = await createAgentSession({
 
 ```typescript
 import { Type } from "typebox";
-import { createAgentSession, defineTool } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, defineTool } from "@dotkaio/dot";
 
 // Inline custom tool
 const myTool = defineTool({
@@ -583,7 +583,7 @@ If you pass `tools`, include each custom or extension tool name you want enabled
 Extensions are loaded by the `ResourceLoader`. `DefaultResourceLoader` discovers extensions from `~/.dot/agent/extensions/`, `.dot/extensions/`, and settings.json extension sources.
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot";
 
 const loader = new DefaultResourceLoader({
   additionalExtensionPaths: ["/path/to/my-extension.ts"],
@@ -605,7 +605,7 @@ Extensions can register tools, subscribe to events, add commands, and more. See 
 **Named inline extensions:** By default, inline factories display as `<inline:1>`, `<inline:2>`, etc. in the startup Extensions list. To show a descriptive name instead, wrap the factory:
 
 ```typescript
-import type { InlineExtension } from "@dotkaio/dot-coding-agent";
+import type { InlineExtension } from "@dotkaio/dot";
 
 const myProvider: InlineExtension = {
   name: "my-provider",
@@ -626,7 +626,7 @@ This displays as `<inline:my-provider>` instead of `<inline:1>`. Bare factory fu
 **Event Bus:** Extensions can communicate via `dot.events`. Pass a shared `eventBus` to `DefaultResourceLoader` if you need to emit or listen from outside:
 
 ```typescript
-import { createEventBus, DefaultResourceLoader } from "@dotkaio/dot-coding-agent";
+import { createEventBus, DefaultResourceLoader } from "@dotkaio/dot";
 
 const eventBus = createEventBus();
 const loader = new DefaultResourceLoader({
@@ -646,7 +646,7 @@ import {
   createAgentSession,
   DefaultResourceLoader,
   type Skill,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const customSkill: Skill = {
   name: "my-skill",
@@ -672,7 +672,7 @@ const { session } = await createAgentSession({ resourceLoader: loader });
 ### Context Files
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, DefaultResourceLoader } from "@dotkaio/dot";
 
 const loader = new DefaultResourceLoader({
   agentsFilesOverride: (current) => ({
@@ -696,7 +696,7 @@ import {
   createAgentSession,
   DefaultResourceLoader,
   type PromptTemplate,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const customCommand: PromptTemplate = {
   name: "deploy",
@@ -731,7 +731,7 @@ import {
   createAgentSessionServices,
   getAgentDir,
   SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 // In-memory (no persistence)
 const { session } = await createAgentSession({
@@ -825,7 +825,7 @@ sm.createBranchedSession(leafId);       // Extract path to new file
 ### Settings Management
 
 ```typescript
-import { createAgentSession, SettingsManager, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SettingsManager, SessionManager } from "@dotkaio/dot";
 
 // Default: loads from files (global + project merged)
 const { session } = await createAgentSession({
@@ -881,7 +881,7 @@ Use `DefaultResourceLoader` to discover extensions, skills, prompts, themes, and
 import {
   DefaultResourceLoader,
   getAgentDir,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const loader = new DefaultResourceLoader({
   cwd,
@@ -931,7 +931,7 @@ import {
   ModelRuntime,
   SessionManager,
   SettingsManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create({
   authPath: "/custom/agent/auth.json",
@@ -1012,7 +1012,7 @@ import {
   getAgentDir,
   InteractiveMode,
   SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
   const services = await createAgentSessionServices({ cwd });
@@ -1052,7 +1052,7 @@ import {
   getAgentDir,
   runPrintMode,
   SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
   const services = await createAgentSessionServices({ cwd });
@@ -1089,7 +1089,7 @@ import {
   getAgentDir,
   runRpcMode,
   SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
   const services = await createAgentSessionServices({ cwd });

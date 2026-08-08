@@ -47,7 +47,7 @@ describe("version checks", () => {
 
 		await expect(getLatestDotVersion("1.2.3")).resolves.toBe("1.2.4");
 		expect(fetchMock).toHaveBeenCalledWith(
-			"https://registry.npmjs.org/@dotkaio%2Fdot-coding-agent/latest",
+			"https://registry.npmjs.org/@dotkaio%2Fdot/latest",
 			expect.objectContaining({
 				headers: expect.objectContaining({
 					"User-Agent": expect.stringMatching(/^dot\/1\.2\.3 /),

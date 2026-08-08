@@ -4,7 +4,7 @@
  * Override settings using SettingsManager.
  */
 
-import { createAgentSession, SessionManager, SettingsManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SessionManager, SettingsManager } from "@dotkaio/dot";
 
 const cwd = process.cwd();
 

@@ -4,7 +4,7 @@
  * Control session persistence: in-memory, new file, continue, or open specific.
  */
 
-import { createAgentSession, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SessionManager } from "@dotkaio/dot";
 
 // In-memory (no persistence)
 const { session: inMemory } = await createAgentSession({

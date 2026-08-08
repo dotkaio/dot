@@ -1,6 +1,6 @@
 import { hostname, platform } from "node:os";
+import { readStoredCredential } from "@dotkaio/dot";
 import type { OAuthCredential } from "@dotkaio/dot-ai";
-import { readStoredCredential } from "@dotkaio/dot-coding-agent";
 import { getServerDir, getSocketPath, VERSION } from "./config.ts";
 import { loadMachine, saveMachine } from "./storage.ts";
 import type { InstanceRecord, MachineRecord, RadiusRegistration } from "./types.ts";

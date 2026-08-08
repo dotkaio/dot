@@ -55,7 +55,7 @@
 	},
 	"dependencies": {
 		"@dotkaio/dot-ai": "^0.0.1",
-		"@dotkaio/dot-coding-agent": "^0.0.1",
+		"@dotkaio/dot": "^0.0.1",
 		"@dotkaio/dot-protocol": "^0.0.1"
 	},
 	"devDependencies": {

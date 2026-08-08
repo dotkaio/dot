@@ -1,7 +1,7 @@
+import type { ExtensionAPI, ExtensionCommandContext } from "@dotkaio/dot";
+import { DynamicBorder, getMarkdownTheme } from "@dotkaio/dot";
 import { uuidv7 } from "@dotkaio/dot-ai";
 import { complete, getModel } from "@dotkaio/dot-ai/compat";
-import type { ExtensionAPI, ExtensionCommandContext } from "@dotkaio/dot-coding-agent";
-import { DynamicBorder, getMarkdownTheme } from "@dotkaio/dot-coding-agent";
 import { Container, Markdown, matchesKey, Text } from "@dotkaio/dot-tui";
 
 type ContentBlock = {

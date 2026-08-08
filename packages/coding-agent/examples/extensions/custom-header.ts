@@ -5,8 +5,8 @@
  * (logo + keybinding hints) with a custom component showing the dot mascot.
  */
 
-import type { ExtensionAPI, Theme } from "@dotkaio/dot-coding-agent";
-import { VERSION } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, Theme } from "@dotkaio/dot";
+import { VERSION } from "@dotkaio/dot";
 
 // --- DOT MASCOT ---
 // Based on dot_mascot.ts - the dot agent character

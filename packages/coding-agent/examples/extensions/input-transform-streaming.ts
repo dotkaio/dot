@@ -11,7 +11,7 @@
  * Start dot with this extension:
  *   dot -e ./examples/extensions/input-transform-streaming.ts
  */
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 
 const TRIGGER = /\b(changes?|diff|modified)\b/i;
 

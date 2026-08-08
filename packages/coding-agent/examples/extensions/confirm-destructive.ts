@@ -5,7 +5,7 @@
  * Demonstrates how to cancel session events using the before_* events.
  */
 
-import type { ExtensionAPI, SessionBeforeSwitchEvent, SessionMessageEntry } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, SessionBeforeSwitchEvent, SessionMessageEntry } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	dot.on("session_before_switch", async (event: SessionBeforeSwitchEvent, ctx) => {

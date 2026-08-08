@@ -10,7 +10,7 @@
  * 3. Use /commands extensions to filter by source
  */
 
-import type { ExtensionAPI, SlashCommandInfo } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, SlashCommandInfo } from "@dotkaio/dot";
 
 export default function commandsExtension(dot: ExtensionAPI) {
 	dot.registerCommand("commands", {

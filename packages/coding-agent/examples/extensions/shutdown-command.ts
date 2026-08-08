@@ -5,7 +5,7 @@
  * Demonstrates how extensions can use ctx.shutdown() to exit dot cleanly.
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "typebox";
 
 export default function (dot: ExtensionAPI) {

@@ -588,7 +588,7 @@ try {
 }
 
 const dotConfigName: string | undefined = pkg.dotConfig?.name;
-export const PACKAGE_NAME: string = pkg.name || "@dotkaio/dot-coding-agent";
+export const PACKAGE_NAME: string = pkg.name || "@dotkaio/dot";
 export const APP_NAME: string = dotConfigName || "dot";
 export const APP_TITLE: string = dotConfigName ? APP_NAME : "dot";
 export const CONFIG_DIR_NAME: string = pkg.dotConfig?.configDir || ".dot";

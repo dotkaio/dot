@@ -12,7 +12,7 @@ const packages = [
 	{ directory: "packages/protocol", name: "@dotkaio/dot-protocol" },
 	{ directory: "packages/client", name: "@dotkaio/dot-client" },
 	{ directory: "packages/storage/sqlite-node", name: "@dotkaio/dot-storage-sqlite-node" },
-	{ directory: "packages/coding-agent", name: "@dotkaio/dot-coding-agent" },
+	{ directory: "packages/coding-agent", name: "@dotkaio/dot" },
 ];
 
 function printUsage() {

@@ -155,7 +155,7 @@ If no `dot` manifest is present, dot auto-discovers resources from these directo
 
 Third party runtime dependencies belong in `dependencies` in `package.json`. Dependencies that do not register extensions, skills, prompt templates, or themes also belong in `dependencies`. When dot installs a package from npm or git, it runs `npm install`, so those dependencies are installed automatically.
 
-Dot bundles core packages for extensions and skills. If you import any of these, list them in `peerDependencies` with a `"*"` range and do not bundle them: `@dotkaio/dot-ai`, `@dotkaio/dot-agent-core`, `@dotkaio/dot-coding-agent`, `@dotkaio/dot-tui`, `typebox`.
+Dot bundles core packages for extensions and skills. If you import any of these, list them in `peerDependencies` with a `"*"` range and do not bundle them: `@dotkaio/dot-ai`, `@dotkaio/dot-agent-core`, `@dotkaio/dot`, `@dotkaio/dot-tui`, `typebox`.
 
 Other dot packages must be bundled in your tarball. Add them to `dependencies` and `bundledDependencies`, then reference their resources through `node_modules/` paths. Dot loads packages with separate module roots, so separate installs do not collide or share modules.
 

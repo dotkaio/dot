@@ -4,7 +4,7 @@
  * Configure provider auth through ModelRuntime.
  */
 
-import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, ModelRuntime, SessionManager } from "@dotkaio/dot";
 
 const modelRuntime = await ModelRuntime.create();
 const { session: defaultAuthSession } = await createAgentSession({

@@ -5,7 +5,7 @@ Dot is a terminal coding harness extended through TypeScript extensions, skills,
 ## Quick start
 
 ```bash
-npm install -g --ignore-scripts @dotkaio/dot-coding-agent
+npm install -g --ignore-scripts @dotkaio/dot
 dot
 ```
 

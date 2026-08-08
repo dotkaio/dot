@@ -7,8 +7,8 @@
  *   dot -e ./bash-spawn-hook.ts
  */
 
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
-import { createBashTool } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI } from "@dotkaio/dot";
+import { createBashTool } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	const cwd = process.cwd();

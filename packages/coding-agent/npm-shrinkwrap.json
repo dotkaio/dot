@@ -1,11 +1,11 @@
 {
-	"name": "@dotkaio/dot-coding-agent",
+	"name": "@dotkaio/dot",
 	"version": "0.0.1",
 	"lockfileVersion": 3,
 	"requires": true,
 	"packages": {
 		"": {
-			"name": "@dotkaio/dot-coding-agent",
+			"name": "@dotkaio/dot",
 			"version": "0.0.1",
 			"license": "MIT",
 			"dependencies": {

@@ -1,10 +1,10 @@
 {
-	"name": "@dotkaio/dot-coding-agent-install",
+	"name": "@dotkaio/dot-install",
 	"version": "0.0.1",
 	"private": true,
 	"description": "Lockfile root used by the dot installer and updater.",
 	"dependencies": {
-		"@dotkaio/dot-coding-agent": "0.0.1"
+		"@dotkaio/dot": "0.0.1"
 	},
 	"overrides": {
 		"protobufjs": "7.6.5",

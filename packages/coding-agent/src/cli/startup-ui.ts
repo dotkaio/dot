@@ -23,7 +23,7 @@ import {
 	type Theme,
 } from "../modes/interactive/theme/theme.ts";
 
-const OFFICIAL_PACKAGE_NAME = "@dotkaio/dot-coding-agent";
+const OFFICIAL_PACKAGE_NAME = "@dotkaio/dot";
 const OFFICIAL_APP_NAME = "dot";
 const OFFICIAL_CONFIG_DIR_NAME = ".dot";
 

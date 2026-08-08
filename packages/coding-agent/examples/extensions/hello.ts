@@ -2,8 +2,8 @@
  * Hello Tool - Minimal custom tool example
  */
 
+import { defineTool, type ExtensionAPI } from "@dotkaio/dot";
 import { Type } from "@dotkaio/dot-ai";
-import { defineTool, type ExtensionAPI } from "@dotkaio/dot-coding-agent";
 
 const helloTool = defineTool({
 	name: "hello",

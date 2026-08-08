@@ -5,7 +5,7 @@ Dot is a terminal coding harness by [dotkaio](https://github.com/dotkaio). It su
 ## Install
 
 ```bash
-npm install -g --ignore-scripts @dotkaio/dot-coding-agent
+npm install -g --ignore-scripts @dotkaio/dot
 dot
 ```
 
@@ -20,7 +20,7 @@ See the [coding-agent README](packages/coding-agent/README.md) and [documentatio
 | [`@dotkaio/dot-ai`](packages/ai) | Multi-provider LLM API |
 | [`@dotkaio/dot-agent-core`](packages/agent) | Agent runtime and harness |
 | [`@dotkaio/dot-tui`](packages/tui) | Terminal UI library |
-| [`@dotkaio/dot-coding-agent`](packages/coding-agent) | Dot CLI and SDK |
+| [`@dotkaio/dot`](packages/coding-agent) | Dot CLI and SDK |
 | [`@dotkaio/dot-protocol`](packages/protocol) | Client/server wire protocol |
 | [`@dotkaio/dot-client`](packages/client) | Dot client library |
 | [`@dotkaio/dot-server`](packages/server) | Dot server |

@@ -1,6 +1,6 @@
+import type { ExtensionAPI } from "@dotkaio/dot";
 import type { AgentTool } from "@dotkaio/dot-agent-core";
 import { fauxAssistantMessage, fauxToolCall } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
 import { Type } from "typebox";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHarness, getAssistantTexts, getMessageText, getUserTexts, type Harness } from "./harness.ts";

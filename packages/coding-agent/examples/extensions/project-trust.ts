@@ -13,7 +13,7 @@
  * Try it in a project containing .dot, AGENTS.md/CLAUDE.md, or .agents/skills.
  */
 
-import type { ExtensionAPI, ProjectTrustEventResult } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ProjectTrustEventResult } from "@dotkaio/dot";
 
 export default function (dot: ExtensionAPI) {
 	let loadCount = 0;

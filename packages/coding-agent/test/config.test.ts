@@ -52,7 +52,7 @@ function createNpmPrefixInstall(template = "dot-prefix-"): { prefix: string; pac
 	const prefix = mkdtempSync(join(tmpdir(), template));
 	const root = join(prefix, "lib", "node_modules");
 	const scopeDir = join(root, "@dotkaio");
-	const packageDir = join(scopeDir, "dot-coding-agent");
+	const packageDir = join(scopeDir, "dot");
 	mkdirSync(packageDir, { recursive: true });
 	tempDir = prefix;
 	process.env.DOT_PACKAGE_DIR = packageDir;
@@ -64,7 +64,7 @@ function createPnpmGlobalInstall(): { root: string; packageDir: string } {
 	const temp = mkdtempSync(join(tmpdir(), "dot-pnpm-"));
 	const binDir = join(temp, "bin");
 	const root = join(temp, "pnpm", "global", "5", "node_modules");
-	const packageDir = join(root, "@dotkaio", "dot-coding-agent");
+	const packageDir = join(root, "@dotkaio", "dot");
 	mkdirSync(packageDir, { recursive: true });
 	mkdirSync(binDir, { recursive: true });
 	writeFileSync(join(binDir, process.platform === "win32" ? "pnpm.cmd" : "pnpm"), createFakePnpmScript(root));
@@ -72,18 +72,7 @@ function createPnpmGlobalInstall(): { root: string; packageDir: string } {
 	tempDir = temp;
 	process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
 	process.env.DOT_PACKAGE_DIR = packageDir;
-	setExecPath(
-		join(
-			root,
-			".pnpm",
-			"@dotkaio+dot-coding-agent@0.0.0",
-			"node_modules",
-			"@dotkaio",
-			"dot-coding-agent",
-			"dist",
-			"cli.js",
-		),
-	);
+	setExecPath(join(root, ".pnpm", "@dotkaio+dot@0.0.0", "node_modules", "@dotkaio", "dot", "dist", "cli.js"));
 	return { root, packageDir };
 }
 
@@ -91,7 +80,7 @@ function createYarnGlobalInstall(): { globalDir: string; packageDir: string } {
 	const temp = mkdtempSync(join(tmpdir(), "dot-yarn-"));
 	const binDir = join(temp, "bin");
 	const globalDir = join(temp, "yarn", "global");
-	const packageDir = join(globalDir, "node_modules", "@dotkaio", "dot-coding-agent");
+	const packageDir = join(globalDir, "node_modules", "@dotkaio", "dot");
 	mkdirSync(packageDir, { recursive: true });
 	mkdirSync(binDir, { recursive: true });
 	writeFileSync(join(binDir, process.platform === "win32" ? "yarn.cmd" : "yarn"), createFakeYarnScript(globalDir));
@@ -99,7 +88,7 @@ function createYarnGlobalInstall(): { globalDir: string; packageDir: string } {
 	tempDir = temp;
 	process.env.PATH = `${binDir}${delimiter}${originalPath ?? ""}`;
 	process.env.DOT_PACKAGE_DIR = packageDir;
-	setExecPath(join(globalDir, ".yarn", "@dotkaio", "dot-coding-agent", "dist", "cli.js"));
+	setExecPath(join(globalDir, ".yarn", "@dotkaio", "dot", "dist", "cli.js"));
 	return { globalDir, packageDir };
 }
 
@@ -109,7 +98,7 @@ function createBunGlobalInstall(): { packageDir: string } {
 	const bunBin = join(prefix, "bin");
 	const root = join(prefix, "install", "global", "node_modules");
 	const scopeDir = join(root, "@dotkaio");
-	const packageDir = join(scopeDir, "dot-coding-agent");
+	const packageDir = join(scopeDir, "dot");
 	mkdirSync(packageDir, { recursive: true });
 	mkdirSync(bunBin, { recursive: true });
 	writeFileSync(join(bunBin, process.platform === "win32" ? "bun.cmd" : "bun"), createFakeBunScript(bunBin));
@@ -173,12 +162,12 @@ function createFakeGitScript(): string {
 describe("detectInstallMethod", () => {
 	test("detects pnpm from Windows .pnpm install paths", () => {
 		setExecPath(
-			"C:\\Users\\Admin\\Documents\\pnpm-repository\\global\\5\\.pnpm\\@dotkaio+dot-coding-agent@0.67.68\\node_modules\\@dotkaio\\dot-coding-agent\\dist\\cli.js",
+			"C:\\Users\\Admin\\Documents\\pnpm-repository\\global\\5\\.pnpm\\@dotkaio+dot@0.67.68\\node_modules\\@dotkaio\\dot\\dist\\cli.js",
 		);
 
 		expect(detectInstallMethod()).toBe("pnpm");
-		expect(getUpdateInstruction("@dotkaio/dot-coding-agent")).toBe(
-			"Run: pnpm install -g --ignore-scripts --config.minimumReleaseAge=0 @dotkaio/dot-coding-agent",
+		expect(getUpdateInstruction("@dotkaio/dot")).toBe(
+			"Run: pnpm install -g --ignore-scripts --config.minimumReleaseAge=0 @dotkaio/dot",
 		);
 	});
 
@@ -191,70 +180,54 @@ describe("detectInstallMethod", () => {
 		setExecPath("/usr/local/bin/node");
 
 		expect(detectInstallMethod()).toBe("unknown");
-		expect(getSelfUpdateCommand("@dotkaio/dot-coding-agent")).toBeUndefined();
-		expect(getUpdateInstruction("@dotkaio/dot-coding-agent")).toBe(
-			"Update @dotkaio/dot-coding-agent using the package manager, wrapper, or source checkout that provides this installation.",
+		expect(getSelfUpdateCommand("@dotkaio/dot")).toBeUndefined();
+		expect(getUpdateInstruction("@dotkaio/dot")).toBe(
+			"Update @dotkaio/dot using the package manager, wrapper, or source checkout that provides this installation.",
 		);
 	});
 
 	test("self-updates npm installs from custom prefixes", () => {
 		const { prefix } = createNpmPrefixInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent");
+		const command = getSelfUpdateCommand("@dotkaio/dot");
 
 		expect(detectInstallMethod()).toBe("npm");
 		expect(command).toEqual({
 			command: "npm",
-			args: [
-				"--prefix",
-				prefix,
-				"install",
-				"-g",
-				"--ignore-scripts",
-				"--min-release-age=0",
-				"@dotkaio/dot-coding-agent",
-			],
-			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot-coding-agent`,
+			args: ["--prefix", prefix, "install", "-g", "--ignore-scripts", "--min-release-age=0", "@dotkaio/dot"],
+			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot`,
 		});
 	});
 
 	test("self-updates exact npm versions without uninstalling the current package", () => {
 		const { prefix } = createNpmPrefixInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", undefined, {
-			packageName: "@dotkaio/dot-coding-agent",
-			installSpec: "@dotkaio/dot-coding-agent@1.2.3",
+		const command = getSelfUpdateCommand("@dotkaio/dot", undefined, {
+			packageName: "@dotkaio/dot",
+			installSpec: "@dotkaio/dot@1.2.3",
 		});
 
 		expect(command).toEqual({
 			command: "npm",
-			args: [
-				"--prefix",
-				prefix,
-				"install",
-				"-g",
-				"--ignore-scripts",
-				"--min-release-age=0",
-				"@dotkaio/dot-coding-agent@1.2.3",
-			],
-			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot-coding-agent@1.2.3`,
+			args: ["--prefix", prefix, "install", "-g", "--ignore-scripts", "--min-release-age=0", "@dotkaio/dot@1.2.3"],
+			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot@1.2.3`,
 		});
 	});
 
 	test("self-updates renamed packages from the current install prefix", () => {
 		const { prefix } = createNpmPrefixInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", undefined, "@new-scope/dot");
+		const command = getSelfUpdateCommand("@dotkaio/dot", undefined, "@new-scope/dot");
 
 		expect(command).toEqual({
 			command: "npm",
 			args: ["--prefix", prefix, "install", "-g", "--ignore-scripts", "--min-release-age=0", "@new-scope/dot"],
-			display: `npm --prefix ${prefix} uninstall -g @dotkaio/dot-coding-agent && npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @new-scope/dot`,
+			display: `npm --prefix ${prefix} uninstall -g @dotkaio/dot && npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @new-scope/dot`,
 			steps: [
 				{
 					command: "npm",
-					args: ["--prefix", prefix, "uninstall", "-g", "@dotkaio/dot-coding-agent"],
-					display: `npm --prefix ${prefix} uninstall -g @dotkaio/dot-coding-agent`,
+					args: ["--prefix", prefix, "uninstall", "-g", "@dotkaio/dot"],
+					display: `npm --prefix ${prefix} uninstall -g @dotkaio/dot`,
 				},
 				{
 					command: "npm",
@@ -268,27 +241,19 @@ describe("detectInstallMethod", () => {
 	test("self-update respects configured npmCommand", () => {
 		const { prefix } = createNpmPrefixInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", ["npm", "--prefix", prefix]);
+		const command = getSelfUpdateCommand("@dotkaio/dot", ["npm", "--prefix", prefix]);
 
 		expect(command).toEqual({
 			command: "npm",
-			args: [
-				"--prefix",
-				prefix,
-				"install",
-				"-g",
-				"--ignore-scripts",
-				"--min-release-age=0",
-				"@dotkaio/dot-coding-agent",
-			],
-			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot-coding-agent`,
+			args: ["--prefix", prefix, "install", "-g", "--ignore-scripts", "--min-release-age=0", "@dotkaio/dot"],
+			display: `npm --prefix ${prefix} install -g --ignore-scripts --min-release-age=0 @dotkaio/dot`,
 		});
 	});
 
 	test("self-update treats empty npmCommand as unset", () => {
 		const { prefix } = createNpmPrefixInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", []);
+		const command = getSelfUpdateCommand("@dotkaio/dot", []);
 
 		expect(command?.args).toEqual([
 			"--prefix",
@@ -297,35 +262,35 @@ describe("detectInstallMethod", () => {
 			"-g",
 			"--ignore-scripts",
 			"--min-release-age=0",
-			"@dotkaio/dot-coding-agent",
+			"@dotkaio/dot",
 		]);
 	});
 
 	test("quotes npm self-update display paths", () => {
 		const { prefix } = createNpmPrefixInstall("dot prefix ");
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent");
+		const command = getSelfUpdateCommand("@dotkaio/dot");
 
 		expect(command?.display).toBe(
-			`npm --prefix "${prefix}" install -g --ignore-scripts --min-release-age=0 @dotkaio/dot-coding-agent`,
+			`npm --prefix "${prefix}" install -g --ignore-scripts --min-release-age=0 @dotkaio/dot`,
 		);
 	});
 
 	test("does not infer Windows npm custom prefixes from package paths", () => {
-		const packageDir = "C:\\Users\\Admin\\npm prefix\\node_modules\\@dotkaio\\dot-coding-agent";
+		const packageDir = "C:\\Users\\Admin\\npm prefix\\node_modules\\@dotkaio\\dot";
 		process.env.DOT_PACKAGE_DIR = packageDir;
 		setExecPath(`${packageDir}\\dist\\cli.js`);
 
 		expect(detectInstallMethod()).toBe("npm");
-		expect(getUpdateInstruction("@dotkaio/dot-coding-agent")).toBe(
-			"Run: npm install -g --ignore-scripts --min-release-age=0 @dotkaio/dot-coding-agent",
+		expect(getUpdateInstruction("@dotkaio/dot")).toBe(
+			"Run: npm install -g --ignore-scripts --min-release-age=0 @dotkaio/dot",
 		);
 	});
 
 	test("self-updates source checkouts with a rebase autostash workflow", () => {
 		const { repoRoot } = createSourceCheckout();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent");
+		const command = getSelfUpdateCommand("@dotkaio/dot");
 
 		expect(detectInstallMethod()).toBe("source");
 		expect(command).toEqual({
@@ -360,32 +325,32 @@ describe("detectInstallMethod", () => {
 	test("self-updates bun global installs from bun pm bin", () => {
 		createBunGlobalInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent");
+		const command = getSelfUpdateCommand("@dotkaio/dot");
 
 		expect(detectInstallMethod()).toBe("bun");
 		expect(command).toEqual({
 			command: "bun",
-			args: ["install", "-g", "--ignore-scripts", "--minimum-release-age=0", "@dotkaio/dot-coding-agent"],
-			display: "bun install -g --ignore-scripts --minimum-release-age=0 @dotkaio/dot-coding-agent",
+			args: ["install", "-g", "--ignore-scripts", "--minimum-release-age=0", "@dotkaio/dot"],
+			display: "bun install -g --ignore-scripts --minimum-release-age=0 @dotkaio/dot",
 		});
 	});
 
 	test("self-updates renamed pnpm global installs by removing the old package first", () => {
 		createPnpmGlobalInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", undefined, "@new-scope/dot");
+		const command = getSelfUpdateCommand("@dotkaio/dot", undefined, "@new-scope/dot");
 
 		expect(detectInstallMethod()).toBe("pnpm");
 		expect(command).toEqual({
 			command: "pnpm",
 			args: ["install", "-g", "--ignore-scripts", "--config.minimumReleaseAge=0", "@new-scope/dot"],
 			display:
-				"pnpm remove -g @dotkaio/dot-coding-agent && pnpm install -g --ignore-scripts --config.minimumReleaseAge=0 @new-scope/dot",
+				"pnpm remove -g @dotkaio/dot && pnpm install -g --ignore-scripts --config.minimumReleaseAge=0 @new-scope/dot",
 			steps: [
 				{
 					command: "pnpm",
-					args: ["remove", "-g", "@dotkaio/dot-coding-agent"],
-					display: "pnpm remove -g @dotkaio/dot-coding-agent",
+					args: ["remove", "-g", "@dotkaio/dot"],
+					display: "pnpm remove -g @dotkaio/dot",
 				},
 				{
 					command: "pnpm",
@@ -400,8 +365,8 @@ describe("detectInstallMethod", () => {
 		const temp = mkdtempSync(join(tmpdir(), "dot-pnpm11-"));
 		const binDir = join(temp, "bin");
 		const root = join(temp, "Library", "pnpm", "global", "v11");
-		const packageName = "@dotkaio/dot-coding-agent";
-		const globalPackageDir = join(root, "11e9a", "node_modules", "@dotkaio", "dot-coding-agent");
+		const packageName = "@dotkaio/dot";
+		const globalPackageDir = join(root, "11e9a", "node_modules", "@dotkaio", "dot");
 		const storePackageDir = join(
 			temp,
 			"Library",
@@ -410,12 +375,12 @@ describe("detectInstallMethod", () => {
 			"v11",
 			"links",
 			"@dotkaio",
-			"dot-coding-agent",
+			"dot",
 			"0.75.0",
 			"hash",
 			"node_modules",
 			"@dotkaio",
-			"dot-coding-agent",
+			"dot",
 		);
 		mkdirSync(globalPackageDir, { recursive: true });
 		mkdirSync(storePackageDir, { recursive: true });
@@ -442,18 +407,18 @@ describe("detectInstallMethod", () => {
 	test("self-updates renamed yarn global installs by removing the old package first", () => {
 		createYarnGlobalInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", undefined, "@new-scope/dot");
+		const command = getSelfUpdateCommand("@dotkaio/dot", undefined, "@new-scope/dot");
 
 		expect(detectInstallMethod()).toBe("yarn");
 		expect(command).toEqual({
 			command: "yarn",
 			args: ["global", "add", "--ignore-scripts", "@new-scope/dot"],
-			display: "yarn global remove @dotkaio/dot-coding-agent && yarn global add --ignore-scripts @new-scope/dot",
+			display: "yarn global remove @dotkaio/dot && yarn global add --ignore-scripts @new-scope/dot",
 			steps: [
 				{
 					command: "yarn",
-					args: ["global", "remove", "@dotkaio/dot-coding-agent"],
-					display: "yarn global remove @dotkaio/dot-coding-agent",
+					args: ["global", "remove", "@dotkaio/dot"],
+					display: "yarn global remove @dotkaio/dot",
 				},
 				{
 					command: "yarn",
@@ -467,19 +432,19 @@ describe("detectInstallMethod", () => {
 	test("self-updates renamed bun global installs by removing the old package first", () => {
 		createBunGlobalInstall();
 
-		const command = getSelfUpdateCommand("@dotkaio/dot-coding-agent", undefined, "@new-scope/dot");
+		const command = getSelfUpdateCommand("@dotkaio/dot", undefined, "@new-scope/dot");
 
 		expect(detectInstallMethod()).toBe("bun");
 		expect(command).toEqual({
 			command: "bun",
 			args: ["install", "-g", "--ignore-scripts", "--minimum-release-age=0", "@new-scope/dot"],
 			display:
-				"bun uninstall -g @dotkaio/dot-coding-agent && bun install -g --ignore-scripts --minimum-release-age=0 @new-scope/dot",
+				"bun uninstall -g @dotkaio/dot && bun install -g --ignore-scripts --minimum-release-age=0 @new-scope/dot",
 			steps: [
 				{
 					command: "bun",
-					args: ["uninstall", "-g", "@dotkaio/dot-coding-agent"],
-					display: "bun uninstall -g @dotkaio/dot-coding-agent",
+					args: ["uninstall", "-g", "@dotkaio/dot"],
+					display: "bun uninstall -g @dotkaio/dot",
 				},
 				{
 					command: "bun",
@@ -494,9 +459,7 @@ describe("detectInstallMethod", () => {
 		const { packageDir } = createNpmPrefixInstall();
 		chmodSync(packageDir, 0o500);
 
-		expect(getSelfUpdateCommand("@dotkaio/dot-coding-agent")).toBeUndefined();
-		expect(getSelfUpdateUnavailableInstruction("@dotkaio/dot-coding-agent")).toContain(
-			"the install path is not writable",
-		);
+		expect(getSelfUpdateCommand("@dotkaio/dot")).toBeUndefined();
+		expect(getSelfUpdateUnavailableInstruction("@dotkaio/dot")).toContain("the install path is not writable");
 	});
 });

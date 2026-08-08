@@ -7,7 +7,7 @@ This page gets you from install to a useful first dot session.
 Dot is distributed as an npm package:
 
 ```bash
-npm install -g --ignore-scripts @dotkaio/dot-coding-agent
+npm install -g --ignore-scripts @dotkaio/dot
 ```
 
 `--ignore-scripts` disables dependency lifecycle scripts during install. Dot does not require install scripts for normal npm installs.
@@ -18,16 +18,16 @@ Use the package manager that installed dot. The curl installer uses npm globally
 
 ```bash
 # curl installer or npm install -g
-npm uninstall -g @dotkaio/dot-coding-agent
+npm uninstall -g @dotkaio/dot
 
 # pnpm
-pnpm remove -g @dotkaio/dot-coding-agent
+pnpm remove -g @dotkaio/dot
 
 # Yarn
-yarn global remove @dotkaio/dot-coding-agent
+yarn global remove @dotkaio/dot
 
 # Bun
-bun uninstall -g @dotkaio/dot-coding-agent
+bun uninstall -g @dotkaio/dot
 ```
 
 Uninstalling dot leaves settings, credentials, sessions, and installed dot packages in `~/.dot/agent/`.

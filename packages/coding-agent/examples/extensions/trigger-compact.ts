@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
 
 const COMPACT_THRESHOLD_TOKENS = 100_000;
 

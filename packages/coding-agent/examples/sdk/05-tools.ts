@@ -10,7 +10,7 @@
  * extensions system using dot.registerTool().
  */
 
-import { createAgentSession, SessionManager } from "@dotkaio/dot-coding-agent";
+import { createAgentSession, SessionManager } from "@dotkaio/dot";
 
 // Read-only mode (no edit/write)
 const { session: readOnlySession } = await createAgentSession({

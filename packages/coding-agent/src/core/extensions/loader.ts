@@ -23,7 +23,7 @@ import * as _bundledTypeboxCompile from "typebox/compile";
 import * as _bundledTypeboxValue from "typebox/value";
 import { CONFIG_DIR_NAME, getAgentDir, isBunBinary } from "../../config.ts";
 // NOTE: This import works because loader.ts exports are NOT re-exported from index.ts,
-// avoiding a circular dependency. Extensions can import from @dotkaio/dot-coding-agent.
+// avoiding a circular dependency. Extensions can import from @dotkaio/dot.
 import * as _bundledDotCodingAgent from "../../index.ts";
 import { resolvePath } from "../../utils/paths.ts";
 import { readDotManifest } from "../dot-manifest.ts";
@@ -63,7 +63,7 @@ const VIRTUAL_MODULES: Record<string, unknown> = {
 	"@dotkaio/dot-ai/compat": _bundledDotAiCompat,
 	"@dotkaio/dot-ai/oauth": _bundledDotAiOauth,
 	"@dotkaio/dot-ai/providers/all": _bundledDotAiProviders,
-	"@dotkaio/dot-coding-agent": _bundledDotCodingAgent,
+	"@dotkaio/dot": _bundledDotCodingAgent,
 };
 
 const require = createRequire(import.meta.url);
@@ -106,7 +106,7 @@ function getAliases(): Record<string, string> {
 	const dotAiProvidersEntry = resolveWorkspaceOrImport("ai/dist/providers/all.js", "@dotkaio/dot-ai/providers/all");
 
 	_aliases = {
-		"@dotkaio/dot-coding-agent": dotCodingAgentEntry,
+		"@dotkaio/dot": dotCodingAgentEntry,
 		"@dotkaio/dot-agent-core": dotAgentCoreEntry,
 		"@dotkaio/dot-tui": dotTuiEntry,
 		"@dotkaio/dot-ai/providers/all": dotAiProvidersEntry,

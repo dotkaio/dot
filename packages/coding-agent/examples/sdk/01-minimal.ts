@@ -5,7 +5,7 @@
  * from cwd and ~/.dot/agent. Model chosen from settings or first available.
  */
 
-import { createAgentSession } from "@dotkaio/dot-coding-agent";
+import { createAgentSession } from "@dotkaio/dot";
 
 const { session } = await createAgentSession();
 

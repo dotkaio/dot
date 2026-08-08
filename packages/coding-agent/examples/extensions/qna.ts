@@ -7,9 +7,9 @@
  * 3. Loads the result into the editor for user to fill in answers
  */
 
+import type { ExtensionAPI } from "@dotkaio/dot";
+import { BorderedLoader } from "@dotkaio/dot";
 import type { UserMessage } from "@dotkaio/dot-ai";
-import type { ExtensionAPI } from "@dotkaio/dot-coding-agent";
-import { BorderedLoader } from "@dotkaio/dot-coding-agent";
 
 const SYSTEM_PROMPT = `You are a question extractor. Given text from a conversation, extract any questions that need answering and format them for the user to fill in.
 
@@ -20,10 +20,10 @@ Output format:
 
 Example output:
 Q: What is your preferred database?
-A: 
+A:
 
 Q: Should we use TypeScript or JavaScript?
-A: 
+A:
 
 Keep questions in the order they appeared. Be concise.`;
 

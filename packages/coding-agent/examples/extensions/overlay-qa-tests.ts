@@ -19,7 +19,7 @@
  *   /overlay-streaming  - Multiple input panels with simulated streaming (Tab to cycle focus)
  */
 
-import type { ExtensionAPI, ExtensionCommandContext, Theme } from "@dotkaio/dot-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, Theme } from "@dotkaio/dot";
 import type { Component, OverlayAnchor, OverlayHandle, OverlayOptions, TUI } from "@dotkaio/dot-tui";
 import { Input, matchesKey, truncateToWidth, visibleWidth } from "@dotkaio/dot-tui";
 import { spawn } from "child_process";

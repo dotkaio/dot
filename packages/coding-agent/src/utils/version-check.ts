@@ -1,7 +1,7 @@
 import { compare, valid } from "semver";
 import { getDotUserAgent } from "./dot-user-agent.ts";
 
-const LATEST_VERSION_URL = "https://registry.npmjs.org/@dotkaio%2Fdot-coding-agent/latest";
+const LATEST_VERSION_URL = "https://registry.npmjs.org/@dotkaio%2Fdot/latest";
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 10000;
 
 export interface LatestDotRelease {

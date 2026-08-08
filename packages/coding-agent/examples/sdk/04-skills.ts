@@ -12,7 +12,7 @@ import {
 	getAgentDir,
 	SessionManager,
 	type Skill,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 // Or define custom skills inline
 const customSkill: Skill = {

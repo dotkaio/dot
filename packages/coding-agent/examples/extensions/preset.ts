@@ -40,9 +40,9 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot";
+import { CONFIG_DIR_NAME, DynamicBorder, getAgentDir } from "@dotkaio/dot";
 import type { Api, Model } from "@dotkaio/dot-ai";
-import type { ExtensionAPI, ExtensionContext } from "@dotkaio/dot-coding-agent";
-import { CONFIG_DIR_NAME, DynamicBorder, getAgentDir } from "@dotkaio/dot-coding-agent";
 import { Container, Key, type SelectItem, SelectList, Text } from "@dotkaio/dot-tui";
 
 // Preset configuration

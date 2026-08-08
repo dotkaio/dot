@@ -11,7 +11,7 @@ import {
 	getAgentDir,
 	type PromptTemplate,
 	SessionManager,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 
 // Define custom templates
 const deployTemplate: PromptTemplate = {

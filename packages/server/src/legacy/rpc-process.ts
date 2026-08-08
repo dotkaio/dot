@@ -8,7 +8,7 @@ import type {
 	RpcExtensionUIRequest,
 	RpcExtensionUIResponse,
 	RpcResponse,
-} from "@dotkaio/dot-coding-agent";
+} from "@dotkaio/dot";
 import { isBunBinary } from "./config.ts";
 
 interface PendingRequest {
@@ -56,7 +56,7 @@ export class RpcProcessInstance {
 		}
 		return {
 			command: process.execPath,
-			args: [require.resolve("@dotkaio/dot-coding-agent/rpc-entry")],
+			args: [require.resolve("@dotkaio/dot/rpc-entry")],
 		};
 	}
 

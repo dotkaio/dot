@@ -17,7 +17,7 @@ pkg update && pkg upgrade
 pkg install nodejs termux-api git
 
 # Install dot
-npm install -g --ignore-scripts @dotkaio/dot-coding-agent
+npm install -g --ignore-scripts @dotkaio/dot
 
 # Create config directory
 mkdir -p ~/.dot/agent
