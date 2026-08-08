@@ -1,0 +1,33 @@
+{
+	"name": "dot-extension-with-deps",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"clean": "echo 'nothing to clean'",
+		"build": "echo 'nothing to build'",
+		"check": "echo 'nothing to check'"
+	},
+	"dot": {
+		"extensions": [
+			"./index.ts"
+		]
+	},
+	"dependencies": {
+		"ms": "2.1.3"
+	},
+	"devDependencies": {
+		"@types/ms": "2.1.0"
+	},
+	"author": "dotkaio",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dotkaio/dot.git",
+		"directory": "packages/coding-agent/examples/extensions/with-deps"
+	},
+	"homepage": "https://github.com/dotkaio/dot#readme",
+	"bugs": {
+		"url": "https://github.com/dotkaio/dot/issues"
+	}
+}

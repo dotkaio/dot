@@ -1,0 +1,31 @@
+{
+	"name": "@dotkaio/dot-evals",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"clean": "shx rm -rf .eval",
+		"eval": "node scripts/run-evals.mjs",
+		"test": "vitest run --config vitest.test.config.ts"
+	},
+	"devDependencies": {
+		"@dotkaio/dot-ai": "^0.0.1",
+		"@dotkaio/dot-coding-agent": "^0.0.1",
+		"@types/node": "24.12.4",
+		"shx": "0.4.0",
+		"typescript": "5.9.3",
+		"vitest-evals": "0.15.0",
+		"vitest": "4.1.9"
+	},
+	"author": "dotkaio",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dotkaio/dot.git",
+		"directory": "packages/evals"
+	},
+	"homepage": "https://github.com/dotkaio/dot#readme",
+	"bugs": {
+		"url": "https://github.com/dotkaio/dot/issues"
+	}
+}

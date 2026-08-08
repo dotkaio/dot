@@ -1,0 +1,42 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read [CONTRIBUTING.md](https://github.com/dotkaio/dot/blob/main/CONTRIBUTING.md). Remove credentials and private session content from logs.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Include the exact error and relevant context.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Dot version
+      placeholder: 0.0.1
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Node/Bun version, terminal, and provider.
+    validations:
+      required: true

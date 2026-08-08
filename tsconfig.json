@@ -1,0 +1,34 @@
+{
+	"extends": "./tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"paths": {
+			"*": ["./*"],
+			"@dotkaio/dot-ai": ["./packages/ai/src/index.ts"],
+			"@dotkaio/dot-ai/oauth": ["./packages/ai/src/oauth.ts"],
+			"@dotkaio/dot-ai/*": ["./packages/ai/src/*.ts", "./packages/ai/src/providers/*.ts"],
+			"@dotkaio/dot-ai/dist/*": ["./packages/ai/src/*"],
+			"@dotkaio/dot-agent-core": ["./packages/agent/src/index.ts"],
+			"@dotkaio/dot-agent-core/*": ["./packages/agent/src/*"],
+			"@dotkaio/dot-agent-sqlite-node": ["./packages/storage/sqlite-node/src/index.ts"],
+			"@dotkaio/dot-coding-agent": ["./packages/coding-agent/src/index.ts"],
+			"@dotkaio/dot-coding-agent/hooks": ["./packages/coding-agent/src/core/hooks/index.ts"],
+			"@dotkaio/dot-coding-agent/*": ["./packages/coding-agent/src/*"],
+			"@dotkaio/dot-protocol": ["./packages/protocol/src/index.ts"],
+			"@dotkaio/dot-protocol/*": ["./packages/protocol/src/*"],
+			"@dotkaio/dot-client": ["./packages/client/src/index.ts"],
+			"@dotkaio/dot-client/*": ["./packages/client/src/*"],
+			"@dotkaio/dot-server": ["./packages/server/src/index.ts"],
+			"@dotkaio/dot-server/*": ["./packages/server/src/*"],
+			"typebox": ["./node_modules/typebox"],
+			"@dotkaio/dot-tui": ["./packages/tui/src/index.ts"],
+			"@dotkaio/dot-tui/*": ["./packages/tui/src/*"],
+			"@dotkaio/dot-agent-old": ["./packages/agent-old/src/index.ts"],
+			"@dotkaio/dot-agent-old/*": ["./packages/agent-old/src/*"]
+		}
+	},
+	"include": ["packages/*/src/**/*", "packages/*/test/**/*", "packages/storage/*/src/**/*", "packages/storage/*/test/**/*", "packages/coding-agent/examples/**/*"],
+	"exclude": ["**/dist/**", "packages/coding-agent/examples/extensions/gondolin/**"]
+}

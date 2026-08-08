@@ -1,0 +1,16 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"paths": {
+			"@dotkaio/dot-coding-agent": ["./src/index.ts"],
+			"@dotkaio/dot-coding-agent/hooks": ["./src/core/hooks/index.ts"],
+			"@dotkaio/dot-tui": ["../tui/src/index.ts"],
+			"@dotkaio/dot-ai": ["../ai/src/index.ts"],
+			"typebox": ["../../node_modules/typebox"]
+		},
+		"skipLibCheck": true
+	},
+	"include": ["examples/**/*.ts"],
+	"exclude": ["node_modules", "dist"]
+}

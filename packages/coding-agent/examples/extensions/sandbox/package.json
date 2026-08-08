@@ -1,0 +1,30 @@
+{
+	"name": "dot-extension-sandbox",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"clean": "echo 'nothing to clean'",
+		"build": "echo 'nothing to build'",
+		"check": "echo 'nothing to check'"
+	},
+	"dot": {
+		"extensions": [
+			"./index.ts"
+		]
+	},
+	"dependencies": {
+		"@anthropic-ai/sandbox-runtime": "0.0.26"
+	},
+	"author": "dotkaio",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dotkaio/dot.git",
+		"directory": "packages/coding-agent/examples/extensions/sandbox"
+	},
+	"homepage": "https://github.com/dotkaio/dot#readme",
+	"bugs": {
+		"url": "https://github.com/dotkaio/dot/issues"
+	}
+}

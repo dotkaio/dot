@@ -1,0 +1,30 @@
+{
+	"name": "dot-extension-custom-provider-anthropic",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"clean": "echo 'nothing to clean'",
+		"build": "echo 'nothing to build'",
+		"check": "echo 'nothing to check'"
+	},
+	"dot": {
+		"extensions": [
+			"./index.ts"
+		]
+	},
+	"dependencies": {
+		"@anthropic-ai/sdk": "0.52.0"
+	},
+	"author": "dotkaio",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dotkaio/dot.git",
+		"directory": "packages/coding-agent/examples/extensions/custom-provider-anthropic"
+	},
+	"homepage": "https://github.com/dotkaio/dot#readme",
+	"bugs": {
+		"url": "https://github.com/dotkaio/dot/issues"
+	}
+}
