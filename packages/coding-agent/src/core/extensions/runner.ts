@@ -799,12 +799,13 @@ export class ExtensionRunner {
 	}
 
 	async emit<TEvent extends RunnerEmitEvent>(event: TEvent): Promise<RunnerEmitResult<TEvent>> {
-		const ctx = this.createContext();
+		let ctx: ExtensionContext | undefined;
 		let result: SessionBeforeEventResult | undefined;
 
 		for (const ext of this.extensions) {
 			const handlers = ext.handlers.get(event.type);
 			if (!handlers || handlers.length === 0) continue;
+			ctx ??= this.createContext();
 
 			for (const handler of handlers) {
 				try {

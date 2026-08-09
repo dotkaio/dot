@@ -10,10 +10,10 @@ while [[ -L "$SCRIPT_PATH" ]]; do
   fi
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
-TSX_BIN="$SCRIPT_DIR/node_modules/.bin/tsx"
 CLI_ENTRY="$SCRIPT_DIR/packages/coding-agent/src/cli.ts"
+SOURCE_PATHS_REGISTER="$SCRIPT_DIR/scripts/register-source-paths.mjs"
 
-if [[ ! -x "$TSX_BIN" ]]; then
+if [[ ! -d "$SCRIPT_DIR/node_modules" ]]; then
   printf 'dot: dependencies are not installed; run "npm ci --ignore-scripts"  in %s\n' "$SCRIPT_DIR" >&2
   exit 1
 fi
@@ -21,6 +21,15 @@ fi
 if [[ ! -f "$CLI_ENTRY" ]]; then
   printf 'dot: source entry point not found: %s\n' "$CLI_ENTRY" >&2
   exit 1
+fi
+
+if [[ ! -f "$SOURCE_PATHS_REGISTER" ]]; then
+  printf 'dot: source path register not found: %s\n' "$SOURCE_PATHS_REGISTER" >&2
+  exit 1
+fi
+
+if [[ -z "${NODE_COMPILE_CACHE:-}" ]]; then
+  export NODE_COMPILE_CACHE="$SCRIPT_DIR/node_modules/.cache/dot-node-compile-cache"
 fi
 
 # Check for --no-env flag
@@ -74,4 +83,4 @@ if [[ "$NO_ENV" == "true" ]]; then
   echo "Running without API keys..."
 fi
 
-exec "$TSX_BIN" --tsconfig "$SCRIPT_DIR/tsconfig.json" "$CLI_ENTRY" ${ARGS[@]+"${ARGS[@]}"}
+exec node --import "$SOURCE_PATHS_REGISTER" "$CLI_ENTRY" ${ARGS[@]+"${ARGS[@]}"}
