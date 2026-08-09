@@ -30,10 +30,9 @@ describe("session selector automatic naming", () => {
 		expect(Object.hasOwn(KEYBINDINGS, "app.session.rename")).toBe(false);
 	});
 
-	it("does not render manual rename controls", async () => {
+	it("renders only the bulk rename control", async () => {
 		const sessions = [makeSession()];
 		const selector = new SessionSelectorComponent(
-			async () => sessions,
 			async () => sessions,
 			() => {},
 			() => {},
@@ -43,6 +42,12 @@ describe("session selector automatic naming", () => {
 		);
 		await new Promise<void>((resolve) => setImmediate(resolve));
 
-		expect(selector.render(120).join("\n").toLowerCase()).not.toContain("rename");
+		const output = selector
+			.render(120)
+			.join("\n")
+			.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, "")
+			.toLowerCase();
+		expect(output).toContain("rename all");
+		expect(output).not.toMatch(/\brename\b(?! all)/);
 	});
 });

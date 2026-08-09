@@ -189,6 +189,38 @@ describe("AssistantMessageComponent", () => {
 		expect(availableWidths).toEqual([78, 58]);
 	});
 
+	test("limits rendered output to the current terminal row budget", () => {
+		initTheme("dark");
+		let maxRows = 6;
+		const component = new AssistantMessageComponent(
+			createAssistantMessage([
+				{ type: "text", text: Array.from({ length: 12 }, (_, index) => `line ${index + 1}`).join("\n") },
+			]),
+			false,
+			undefined,
+			"Thinking...",
+			1,
+			[],
+			() => maxRows,
+		);
+
+		let lines = component.render(40);
+		expect(lines).toHaveLength(6);
+		expect(stripAnsi(lines.join("\n"))).toContain("rows omitted to fit terminal");
+		expect(lines[0]).toContain(OSC133_ZONE_START);
+		expect(lines.at(-1)?.startsWith(OSC133_ZONE_END + OSC133_ZONE_FINAL)).toBe(true);
+
+		maxRows = 4;
+		lines = component.render(40);
+		expect(lines).toHaveLength(4);
+		expect(stripAnsi(lines.join("\n"))).toContain("line 12");
+
+		maxRows = 20;
+		lines = component.render(40);
+		expect(stripAnsi(lines.join("\n"))).not.toContain("rows omitted to fit terminal");
+		expect(stripAnsi(lines.join("\n"))).toContain("line 1");
+	});
+
 	test("continues the Markdown transformer chain when a transformer throws", () => {
 		initTheme("dark");
 		const calls: string[] = [];

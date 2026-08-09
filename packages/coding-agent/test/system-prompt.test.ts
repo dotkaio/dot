@@ -112,4 +112,31 @@ describe("buildSystemPrompt", () => {
 			expect(prompt.match(/- Use dynamic_tool for summaries\./g)).toHaveLength(1);
 		});
 	});
+
+	describe("terminal output requirement", () => {
+		test("uses the terminal dimensions to bound final responses", () => {
+			const prompt = buildSystemPrompt({
+				selectedTools: [],
+				contextFiles: [],
+				skills: [],
+				cwd: process.cwd(),
+				terminalSize: { columns: 100, rows: 30 },
+			});
+
+			expect(prompt).toContain("Keep each final response within 25 rendered rows at 100 columns");
+		});
+
+		test("applies the terminal limit after a custom system prompt", () => {
+			const prompt = buildSystemPrompt({
+				customPrompt: "Custom instructions",
+				contextFiles: [],
+				skills: [],
+				cwd: process.cwd(),
+				terminalSize: { columns: 40, rows: 4 },
+			});
+
+			expect(prompt).toContain("Custom instructions");
+			expect(prompt).toContain("Keep each final response within 1 rendered row at 40 columns");
+		});
+	});
 });

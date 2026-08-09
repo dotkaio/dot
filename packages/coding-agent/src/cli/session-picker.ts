@@ -13,7 +13,6 @@ type SessionsLoader = (onProgress?: SessionListProgress) => Promise<SessionInfo[
 
 /** Show TUI session selector and return selected session path or null if cancelled */
 export async function selectSession(
-	currentSessionsLoader: SessionsLoader,
 	allSessionsLoader: SessionsLoader,
 	settingsManager: SettingsManager,
 ): Promise<string | null> {
@@ -24,7 +23,6 @@ export async function selectSession(
 		let resolved = false;
 
 		const selector = new SessionSelectorComponent(
-			currentSessionsLoader,
 			allSessionsLoader,
 			(path: string) => {
 				if (!resolved) {

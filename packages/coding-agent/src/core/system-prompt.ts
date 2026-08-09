@@ -4,6 +4,7 @@
 
 import { getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
 import { formatSkillsForPrompt, type Skill } from "./skills.ts";
+import { getCurrentTerminalSize, getTerminalOutputBudget, type TerminalSize } from "./terminal-output-budget.ts";
 
 export interface BuildSystemPromptOptions {
 	/** Custom system prompt (replaces default). */
@@ -22,6 +23,8 @@ export interface BuildSystemPromptOptions {
 	contextFiles?: Array<{ path: string; content: string }>;
 	/** Pre-loaded skills. */
 	skills?: Skill[];
+	/** Interactive terminal dimensions used to bound final responses. */
+	terminalSize?: TerminalSize;
 }
 
 /** Build the system prompt with tools, guidelines, and context */
@@ -35,8 +38,15 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 		cwd,
 		contextFiles: providedContextFiles,
 		skills: providedSkills,
+		terminalSize: providedTerminalSize,
 	} = options;
 	const promptCwd = cwd.replace(/\\/g, "/");
+	const terminalSize = providedTerminalSize ?? getCurrentTerminalSize();
+	const terminalOutputBudget = terminalSize ? getTerminalOutputBudget(terminalSize) : undefined;
+	const terminalRowLabel = terminalOutputBudget?.rows === 1 ? "row" : "rows";
+	const terminalOutputRequirement = terminalOutputBudget
+		? `\n\nTerminal output requirement: Keep each final response within ${terminalOutputBudget.rows} rendered ${terminalRowLabel} at ${terminalOutputBudget.columns} columns, including wrapping and blank lines. Prioritize the outcome and essential evidence when space is limited.`
+		: "";
 
 	const appendSection = appendSystemPrompt ? `\n\n${appendSystemPrompt}` : "";
 
@@ -66,7 +76,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 			prompt += formatSkillsForPrompt(skills);
 		}
 
-		prompt += `\nCurrent working directory: ${promptCwd}`;
+		prompt += `\nCurrent working directory: ${promptCwd}${terminalOutputRequirement}`;
 
 		return prompt;
 	}
@@ -156,7 +166,7 @@ dot documentation (read only when the user asks about dot itself, its SDK, exten
 		prompt += formatSkillsForPrompt(skills);
 	}
 
-	prompt += `\nCurrent working directory: ${promptCwd}`;
+	prompt += `\nCurrent working directory: ${promptCwd}${terminalOutputRequirement}`;
 
 	return prompt;
 }

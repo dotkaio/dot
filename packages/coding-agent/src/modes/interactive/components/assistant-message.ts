@@ -1,6 +1,7 @@
 import type { AssistantMessage } from "@dotkaio/dot-ai";
-import { Container, Markdown, type MarkdownTheme, Spacer, Text } from "@dotkaio/dot-tui";
+import { Container, Markdown, type MarkdownTheme, Spacer, Text, truncateToWidth } from "@dotkaio/dot-tui";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
+import { getTerminalOutputBudget } from "../../../core/terminal-output-budget.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { createMarkdownTransform } from "./markdown-transform.ts";
 
@@ -18,6 +19,7 @@ export class AssistantMessageComponent extends Container {
 	private hiddenThinkingLabel: string;
 	private outputPad: number;
 	private markdownTransformers: readonly MarkdownTransformer[];
+	private getMaxRows: () => number;
 	private lastMessage?: AssistantMessage;
 	private hasToolCalls = false;
 	private isStreaming = false;
@@ -29,6 +31,7 @@ export class AssistantMessageComponent extends Container {
 		hiddenThinkingLabel = "Thinking...",
 		outputPad = 1,
 		markdownTransformers: readonly MarkdownTransformer[] = [],
+		getMaxRows: () => number = () => getTerminalOutputBudget().rows,
 	) {
 		super();
 
@@ -37,6 +40,7 @@ export class AssistantMessageComponent extends Container {
 		this.hiddenThinkingLabel = hiddenThinkingLabel;
 		this.outputPad = outputPad;
 		this.markdownTransformers = markdownTransformers;
+		this.getMaxRows = getMaxRows;
 
 		// Container for text/thinking content
 		this.contentContainer = new Container();
@@ -76,7 +80,22 @@ export class AssistantMessageComponent extends Container {
 	}
 
 	override render(width: number): string[] {
-		const lines = super.render(width);
+		let lines = super.render(width);
+		const requestedMaxRows = this.getMaxRows();
+		const maxRows = Number.isFinite(requestedMaxRows) ? Math.max(1, Math.floor(requestedMaxRows)) : 1;
+		if (lines.length > maxRows) {
+			// Bound only the rendered copy. The complete message remains available when the terminal grows and in session data.
+			const visibleContentRows = maxRows - 1;
+			const headRows = Math.ceil(visibleContentRows / 2);
+			const tailRows = visibleContentRows - headRows;
+			const omittedRows = lines.length - visibleContentRows;
+			const omissionLine = truncateToWidth(
+				theme.fg("dim", `… ${omittedRows} rows omitted to fit terminal …`),
+				width,
+				"",
+			);
+			lines = [...lines.slice(0, headRows), omissionLine, ...(tailRows > 0 ? lines.slice(-tailRows) : [])];
+		}
 		if (this.hasToolCalls || lines.length === 0) {
 			return lines;
 		}

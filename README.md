@@ -38,6 +38,10 @@ npm run check
 
 Use `npm run build:offline` to build from the checked-in model data, or `npm run build` to refresh provider metadata first.
 
+## Swift
+
+[`swift/CodexSlashCommands`](swift/CodexSlashCommands) is a standalone Swift package containing the complete documented Codex `/` command catalog, parser, autocomplete, and typed routing boundary. It lives alongside the TypeScript implementation and does not add a Node.js dependency to Swift targets.
+
 ## Security
 
 Dot runs with the permissions of the user who starts it. Extensions and packages execute arbitrary code. Review third-party code and use an operating-system sandbox when stronger isolation is required. See [SECURITY.md](SECURITY.md).

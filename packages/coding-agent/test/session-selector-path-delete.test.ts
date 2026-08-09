@@ -8,22 +8,6 @@ import type { SessionInfo } from "../src/core/session-manager.ts";
 import { SessionSelectorComponent } from "../src/modes/interactive/components/session-selector.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 
-type Deferred<T> = {
-	promise: Promise<T>;
-	resolve: (value: T) => void;
-	reject: (err: unknown) => void;
-};
-
-function createDeferred<T>(): Deferred<T> {
-	let resolve: (value: T) => void = () => {};
-	let reject: (err: unknown) => void = () => {};
-	const promise = new Promise<T>((res, rej) => {
-		resolve = res;
-		reject = rej;
-	});
-	return { promise, resolve, reject };
-}
-
 async function flushPromises(): Promise<void> {
 	await new Promise<void>((resolve) => {
 		setImmediate(resolve);
@@ -111,7 +95,6 @@ describe("session selector path/delete interactions", () => {
 
 		const selector = new SessionSelectorComponent(
 			async () => sessions,
-			async () => [],
 			() => {},
 			() => {},
 			() => {},
@@ -135,7 +118,6 @@ describe("session selector path/delete interactions", () => {
 
 		const selector = new SessionSelectorComponent(
 			async () => sessions,
-			async () => [],
 			() => {},
 			() => {},
 			() => {},
@@ -159,7 +141,6 @@ describe("session selector path/delete interactions", () => {
 
 		const selector = new SessionSelectorComponent(
 			async () => sessions,
-			async () => [],
 			() => {},
 			() => {},
 			() => {},
@@ -185,16 +166,14 @@ describe("session selector path/delete interactions", () => {
 		expect(deletedPath).toBe(sessions[0]!.path);
 	});
 
-	it("does not switch scope back to All when All load resolves after toggling back to Current", async () => {
-		const currentSessions = [makeSession({ id: "current" })];
-		const allDeferred = createDeferred<SessionInfo[]>();
+	it("always shows All sessions and never offers a Current Folder scope", async () => {
+		const allSessions = [makeSession({ id: "all" })];
 		let allLoadCalls = 0;
 
 		const selector = new SessionSelectorComponent(
-			async () => currentSessions,
 			async () => {
 				allLoadCalls++;
-				return allDeferred.promise;
+				return allSessions;
 			},
 			() => {},
 			() => {},
@@ -204,47 +183,11 @@ describe("session selector path/delete interactions", () => {
 		);
 		await flushPromises();
 
-		const list = selector.getSessionList();
-		list.handleInput("\t"); // current -> all (starts async load)
-		list.handleInput("\t"); // all -> current
-
-		allDeferred.resolve([makeSession({ id: "all" })]);
-		await flushPromises();
-
 		expect(allLoadCalls).toBe(1);
-		const output = selector.render(120).join("\n");
-		expect(output).toContain("Resume Session (Current Folder)");
-		expect(output).not.toContain("Resume Session (All)");
-	});
-
-	it("does not start redundant All loads when toggling scopes while All is already loading", async () => {
-		const currentSessions = [makeSession({ id: "current" })];
-		const allDeferred = createDeferred<SessionInfo[]>();
-		let allLoadCalls = 0;
-
-		const selector = new SessionSelectorComponent(
-			async () => currentSessions,
-			async () => {
-				allLoadCalls++;
-				return allDeferred.promise;
-			},
-			() => {},
-			() => {},
-			() => {},
-			() => {},
-			{ keybindings },
-		);
-		await flushPromises();
-
-		const list = selector.getSessionList();
-		list.handleInput("\t"); // current -> all (starts async load)
-		list.handleInput("\t"); // all -> current
-		list.handleInput("\t"); // current -> all again while load pending
-
-		expect(allLoadCalls).toBe(1);
-
-		allDeferred.resolve([makeSession({ id: "all" })]);
-		await flushPromises();
+		const output = stripAnsi(selector.render(120).join("\n"));
+		expect(output).toContain("Resume Session (All)");
+		expect(output).not.toContain("Resume Session (Current Folder)");
+		expect(output).not.toContain("Current Folder");
 	});
 
 	it("threads sessions when parent and child paths use different symlink aliases", async () => {
@@ -269,7 +212,6 @@ describe("session selector path/delete interactions", () => {
 
 		const selector = new SessionSelectorComponent(
 			async () => sessions,
-			async () => [],
 			() => {},
 			() => {},
 			() => {},
@@ -303,7 +245,6 @@ describe("session selector path/delete interactions", () => {
 
 		const selector = new SessionSelectorComponent(
 			async () => [parentOne, parentTwo, childTwo],
-			async () => [],
 			() => {},
 			() => {},
 			() => {},
@@ -329,7 +270,6 @@ describe("session selector path/delete interactions", () => {
 		const sessions = [makeSession({ id: "parent", path: paths.parentAliasB, name: "Parent" })];
 		const selector = new SessionSelectorComponent(
 			async () => sessions,
-			async () => [],
 			() => {},
 			() => {},
 			() => {},

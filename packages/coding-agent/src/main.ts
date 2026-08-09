@@ -369,7 +369,6 @@ async function createSessionManager(
 	if (parsed.resume) {
 		try {
 			const selectedPath = await selectSession(
-				(onProgress) => SessionManager.list(cwd, sessionDir, onProgress),
 				(onProgress) => SessionManager.listAll(sessionDir, onProgress),
 				settingsManager,
 			);
