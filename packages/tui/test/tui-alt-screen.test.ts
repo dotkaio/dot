@@ -492,6 +492,31 @@ describe("TuiAltScreen", () => {
 		tui.stop();
 	});
 
+	it("copies a retained mouse selection with Super+C", async () => {
+		const terminal = new RecordingTerminal(20, 4);
+		const tui = new TuiAltScreen(terminal);
+		tui.addChild(new Text("alpha\nbeta\ngamma\ndelta", 0, 0));
+		tui.start();
+		await terminal.waitForRender();
+
+		terminal.sendInput("\x1b[<0;1;1M");
+		terminal.sendInput("\x1b[<32;4;2M");
+		terminal.sendInput("\x1b[<0;4;2m");
+		await terminal.waitForRender();
+
+		const expectedClipboardSequence = `\x1b]52;c;${Buffer.from("alpha\nbeta").toString("base64")}\x07`;
+		const clipboardWriteCount = () =>
+			terminal.events.filter((event) => event.type === "write" && event.data.includes(expectedClipboardSequence))
+				.length;
+		assert.strictEqual(clipboardWriteCount(), 1);
+
+		terminal.sendInput("\x1b[99;9u");
+		await terminal.waitForRender();
+		assert.strictEqual(clipboardWriteCount(), 2);
+
+		tui.stop();
+	});
+
 	it("ignores orphan selection events and cancels an active selection on focus loss", async () => {
 		const terminal = new RecordingTerminal(20, 4);
 		const tui = new TuiAltScreen(terminal);

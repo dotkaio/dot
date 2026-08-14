@@ -18,7 +18,7 @@ After editing `keybindings.json`, run `/reload` in dot to apply the changes with
 - **Function:** `f1`-`f12`
 - **Symbols:** `` ` ``, `-`, `=`, `[`, `]`, `\`, `;`, `'`, `,`, `.`, `/`, `!`, `@`, `#`, `$`, `%`, `^`, `&`, `*`, `(`, `)`, `_`, `+`, `|`, `~`, `{`, `}`, `:`, `<`, `>`, `?`
 
-Modifier combinations: `ctrl+shift+x`, `alt+ctrl+x`, `ctrl+shift+alt+x`, `ctrl+1`, etc.
+Modifier combinations: `ctrl+shift+x`, `alt+ctrl+x`, `ctrl+shift+alt+x`, `super+c`, `ctrl+1`, etc.
 
 ## All Actions
 
@@ -70,7 +70,7 @@ Modifier combinations: `ctrl+shift+x`, `alt+ctrl+x`, `ctrl+shift+alt+x`, `ctrl+1
 
 | Keybinding id | Default | Description |
 |--------|---------|-------------|
-| `tui.input.copy` | `ctrl+c` | Copy selection |
+| `tui.input.copy` | `ctrl+c`, `super+c` | Copy selection |
 | `tui.select.up` | `up` | Move selection up |
 | `tui.select.down` | `down` | Move selection down |
 | `tui.select.pageUp` | `pageUp` | Page up in list |
@@ -109,7 +109,7 @@ These actions apply when interactive mode uses `--ui-mode fullscreen` and target
 | `app.session.new` | *(none)* | Start a new session (`/new`) |
 | `app.session.tree` | *(none)* | Open session tree navigator (`/tree`) |
 | `app.session.fork` | *(none)* | Fork current session (`/fork`) |
-| `app.session.resume` | *(none)* | Open session resume picker (`/resume`) |
+| `app.session.resume` | `ctrl+r` | Open session resume picker (`/resume`) |
 | `app.session.togglePath` | `ctrl+p` | Toggle path display |
 | `app.session.toggleSort` | `ctrl+s` | Toggle sort mode |
 | `app.session.toggleNamedFilter` | `ctrl+n` | Toggle named-only filter |

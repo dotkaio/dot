@@ -93,4 +93,11 @@ describe("keybindings migration", () => {
 		expect(effective["app.thinking.decrease"]).toBe("ctrl+,");
 		expect(effective["app.thinking.increase"]).toBe("ctrl+.");
 	});
+
+	it("provides the session resume shortcut", () => {
+		const keybindings = new KeybindingsManager();
+		const effective = keybindings.getEffectiveConfig();
+
+		expect(effective["app.session.resume"]).toBe("ctrl+r");
+	});
 });

@@ -181,6 +181,7 @@ See `/hotkeys` for the full list. Customize via `~/.dot/agent/keybindings.json`.
 | Escape | Cancel/abort |
 | Escape twice | Open `/tree` |
 | Ctrl+L | Open model selector |
+| Ctrl+R | Open session resume picker |
 | Ctrl+P / Shift+Ctrl+P | Cycle scoped models forward/backward |
 | Shift+Tab | Cycle thinking level |
 | Ctrl+O | Collapse/expand tool output |

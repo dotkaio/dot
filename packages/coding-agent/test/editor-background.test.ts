@@ -1,4 +1,4 @@
-import { setCapabilities, TuiMainScreen } from "@dotkaio/dot-tui";
+import { CombinedAutocompleteProvider, setCapabilities, TuiMainScreen } from "@dotkaio/dot-tui";
 import { beforeEach, describe, expect, it } from "vitest";
 import { VirtualTerminal } from "../../tui/test/virtual-terminal.ts";
 import { KeybindingsManager } from "../src/core/keybindings.ts";
@@ -39,5 +39,31 @@ describe("main editor background", () => {
 		const cursorLine = editor.render(20)[0]!;
 
 		expect(cursorLine).toContain("\x1b[0m\x1b[48;2;36;36;41m");
+	});
+
+	it("does not resume while the slash-command panel is open", async () => {
+		const editor = new CustomEditor(
+			new TuiMainScreen(new VirtualTerminal(20, 24)),
+			getEditorTheme(),
+			KeybindingsManager.create(),
+		);
+		let resumeCount = 0;
+		editor.onAction("app.session.resume", () => {
+			resumeCount += 1;
+		});
+		editor.setAutocompleteProvider(
+			new CombinedAutocompleteProvider([{ name: "resume", description: "Resume a session" }], process.cwd()),
+		);
+
+		editor.handleInput("/");
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(editor.isShowingAutocomplete()).toBe(true);
+
+		editor.handleInput("\x12");
+		expect(resumeCount).toBe(0);
+
+		editor.handleInput("\x1b");
+		editor.handleInput("\x12");
+		expect(resumeCount).toBe(1);
 	});
 });

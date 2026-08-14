@@ -76,7 +76,12 @@ export class CustomEditor extends Editor {
 
 		// Check all other app actions
 		for (const [action, handler] of this.actionHandlers) {
-			if (action !== "app.interrupt" && action !== "app.exit" && this.keybindings.matches(data, action)) {
+			if (
+				action !== "app.interrupt" &&
+				action !== "app.exit" &&
+				!(action === "app.session.resume" && this.isShowingAutocomplete()) &&
+				this.keybindings.matches(data, action)
+			) {
 				handler();
 				return;
 			}
