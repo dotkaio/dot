@@ -66,7 +66,7 @@ If the agent is streaming and no `streamingBehavior` is specified, the command r
 
 **Extension commands**: If the message is an extension command (e.g., `/mycommand`), it executes immediately even during streaming. Extension commands manage their own LLM interaction via `dot.sendMessage()`.
 
-**Input expansion**: Skill commands (`/skill:name`) and prompt templates (`/template`) are expanded before sending/queueing.
+**Input expansion**: Skill commands using their declared names (for example, `/review`) and prompt templates (`/template`) are expanded before sending/queueing.
 
 Response:
 ```json
@@ -807,8 +807,8 @@ Response:
   "data": {
     "commands": [
       {"name": "session-name", "description": "Set or clear session name", "source": "extension", "path": "/home/user/.dot/agent/extensions/session.ts"},
-      {"name": "fix-tests", "description": "Fix failing tests", "source": "prompt", "location": "project", "path": "/home/user/myproject/.dot/agent/prompts/fix-tests.md"},
-      {"name": "skill:brave-search", "description": "Web search via Brave API", "source": "skill", "location": "user", "path": "/home/user/.dot/agent/skills/brave-search/SKILL.md"}
+      {"name": "brave-search", "description": "Web search via Brave API", "source": "skill", "location": "user", "path": "/home/user/.dot/agent/skills/brave-search/SKILL.md"},
+      {"name": "fix-tests", "description": "Fix failing tests", "source": "prompt", "location": "project", "path": "/home/user/myproject/.dot/agent/prompts/fix-tests.md"}
     ]
   }
 }
@@ -819,8 +819,8 @@ Each command has:
 - `description`: Human-readable description (optional for extension commands)
 - `source`: What kind of command:
   - `"extension"`: Registered via `dot.registerCommand()` in an extension
+  - `"skill"`: Loaded from a skill directory and invoked directly by its declared name
   - `"prompt"`: Loaded from a prompt template `.md` file
-  - `"skill"`: Loaded from a skill directory (name is prefixed with `skill:`)
 - `location`: Where it was loaded from (optional, not present for extensions):
   - `"user"`: User-level (`~/.dot/agent/`)
   - `"project"`: Project-level (`./.dot/agent/`)

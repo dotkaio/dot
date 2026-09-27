@@ -11,6 +11,7 @@ const packages = [
 	{ directory: "packages/client", name: "@dotkaio/dot-client" },
 	{ directory: "packages/storage/sqlite-node", name: "@dotkaio/dot-storage-sqlite-node" },
 	{ directory: "packages/tui", name: "@dotkaio/dot-tui" },
+	{ directory: "packages/keenable-web-search", name: "@dotkaio/dot-keenable-web-search" },
 	{ directory: "packages/coding-agent", name: "@dotkaio/dot" },
 ];
 

@@ -3,7 +3,11 @@ import { setKeybindings, type TUI } from "@dotkaio/dot-tui";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { KeybindingsManager } from "../../src/core/keybindings.ts";
 import {
+	ARTIFICIAL_ANALYSIS_CACHE_TTL_MS,
+	decryptArtificialAnalysisPayload,
+	isArtificialAnalysisCacheFresh,
 	ModelSelectorComponent,
+	parseArtificialAnalysisDataManifests,
 	parseArtificialAnalysisScores,
 	resolveArtificialAnalysisIqForTest,
 } from "../../src/modes/interactive/components/model-selector.ts";
@@ -242,6 +246,30 @@ describe("model selector sorting", () => {
 		}
 	});
 
+	it("decodes full data manifests and expires IQ metadata after 24 hours", async () => {
+		const keyHex = "01".repeat(32);
+		const manifest = { path: "/data/models.txt", key: keyHex };
+		const flightPayload = `1f:${JSON.stringify(["$", "div", null, { manifest }])}\n`;
+		const html = `<script>self.__next_f.push([1,${JSON.stringify(flightPayload)}])</script>`;
+		expect(parseArtificialAnalysisDataManifests(html)).toEqual([manifest]);
+
+		const now = 2_000_000_000_000;
+		expect(ARTIFICIAL_ANALYSIS_CACHE_TTL_MS).toBe(86_400_000);
+		expect(isArtificialAnalysisCacheFresh(now - ARTIFICIAL_ANALYSIS_CACHE_TTL_MS + 1, now)).toBe(true);
+		expect(isArtificialAnalysisCacheFresh(now - ARTIFICIAL_ANALYSIS_CACHE_TTL_MS, now)).toBe(false);
+
+		const payload = [{ slug: "historical-model", deprecated: true, intelligenceIndex: 42.5 }];
+		const compressed = await new Response(
+			new Blob([JSON.stringify(payload)]).stream().pipeThrough(new CompressionStream("gzip")),
+		).arrayBuffer();
+		const keyBytes = new Uint8Array(32).fill(1);
+		const digest = await crypto.subtle.digest("SHA-256", keyBytes);
+		const iv = new Uint8Array(digest).slice(0, 12);
+		const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["encrypt"]);
+		const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, compressed);
+		expect(await decryptArtificialAnalysisPayload(encrypted, keyHex)).toEqual(payload);
+	});
+
 	it("uses only the Intelligence Index and keeps provider routes consistent", () => {
 		const scores = parseArtificialAnalysisScores(
 			String.raw`<script>self.__next_f.push([1,"{\"initialData\":[{\"id\":\"gpt-5-6-sol-high-uuid\",\"slug\":\"gpt-5-6-sol-high\",\"name\":\"GPT-5.6 Sol (high)\",\"shortName\":\"GPT-5.6 Sol\",\"releaseDate\":\"2026-07-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":56.4,\"codingIndex\":71.2},{\"id\":\"gpt-5-6-sol-max-uuid\",\"slug\":\"gpt-5-6-sol-max\",\"name\":\"GPT-5.6 Sol (max)\",\"shortName\":\"GPT-5.6 Sol\",\"releaseDate\":\"2026-07-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":59.2,\"codingIndex\":77.4},{\"id\":\"claude-4-5-haiku-uuid\",\"slug\":\"claude-4-5-haiku\",\"name\":\"Claude Haiku 4.5\",\"shortName\":\"Claude Haiku 4.5\",\"releaseDate\":\"2025-10-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":29.5,\"codingIndex\":41.5},{\"id\":\"o3-uuid\",\"slug\":\"o3\",\"name\":\"o3\",\"shortName\":\"o3\",\"releaseDate\":\"2025-04-16\",\"isReasoning\":true,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":30.4,\"codingIndex\":48.1},{\"id\":\"grok-4-5-high-uuid\",\"slug\":\"grok-4-5-high\",\"name\":\"Grok 4.5 (high)\",\"shortName\":\"Grok 4.5\",\"releaseDate\":\"2026-07-08\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":60.1,\"codingIndex\":72.4},{\"id\":\"old-model-uuid\",\"slug\":\"old-model\",\"name\":\"Old model\",\"shortName\":\"Old model\",\"releaseDate\":\"2020-01-01\",\"isReasoning\":false,\"deprecated\":true,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":99,\"codingIndex\":99},{\"id\":\"unranked-uuid\",\"slug\":\"unranked\",\"name\":\"Unranked\",\"shortName\":\"Unranked\",\"releaseDate\":\"2020-01-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":40,\"codingIndex\":null}]}"])</script>` +
@@ -252,7 +280,7 @@ describe("model selector sorting", () => {
 		expect(scores.exact.get("gpt-5-6-sol-high")).toBe(56.4);
 		expect(scores.exact.get("gpt-5-6-sol-max")).toBe(59.2);
 		expect(scores.canonical.get("gpt-5-6-sol")).toBe(59.2);
-		expect(scores.exact.has("old-model")).toBe(false);
+		expect(scores.exact.get("old-model")).toBe(99);
 		expect(scores.exact.get("unranked")).toBe(40);
 		expect(scores.exact.has("claude-opus-4-8")).toBe(false);
 		expect(scores.exact.has("xai-grok-4-5")).toBe(false);
@@ -290,6 +318,27 @@ describe("model selector sorting", () => {
 				scores,
 			),
 		).toBe(30.4);
+
+		const routeVariantScores = parseArtificialAnalysisScores(
+			`<script type="application/ld+json">${JSON.stringify({
+				data: [
+					{ slug: "qwen3-32b", intelligenceIndex: 35.5 },
+					{ slug: "minimax-m2-5", intelligenceIndex: 40.5 },
+				],
+			})}</script>`,
+		);
+		expect(
+			resolveArtificialAnalysisIqForTest(
+				{ provider: "vercel-ai-gateway", id: "alibaba/qwen-3-32b", name: "Qwen 3 32B" },
+				routeVariantScores,
+			),
+		).toBe(35.5);
+		expect(
+			resolveArtificialAnalysisIqForTest(
+				{ provider: "vercel-ai-gateway", id: "minimax/minimax-m2.5-highspeed", name: "MiniMax M2.5 High Speed" },
+				routeVariantScores,
+			),
+		).toBe(40.5);
 
 		// Identity orthography: free-tier packaging, instruct -it tags, zero-padded versions, MoE size tags.
 		const identityScores = parseArtificialAnalysisScores(

@@ -59,10 +59,12 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
 export class FooterComponent implements Component {
 	private session: AgentSession;
 	private footerData: ReadonlyFooterDataProvider;
+	private readonly rightLabel: string | undefined;
 
-	constructor(session: AgentSession, footerData: ReadonlyFooterDataProvider) {
+	constructor(session: AgentSession, footerData: ReadonlyFooterDataProvider, rightLabel?: string) {
 		this.session = session;
 		this.footerData = footerData;
+		this.rightLabel = rightLabel;
 	}
 
 	setSession(session: AgentSession): void {
@@ -131,7 +133,7 @@ export class FooterComponent implements Component {
 		const providerName = isVercelAiGatewayProvider(provider) ? "vercel" : provider || "no-provider";
 		const modelName = state.model?.id.split("/").at(-1) || "no-model";
 		const thinkingLevel = state.thinkingLevel || "off";
-		const right = `${providerName} • ${modelName} • ${thinkingLevel}`;
+		const right = this.rightLabel ?? `${providerName} • ${modelName} • ${thinkingLevel}`;
 
 		const minPadding = 2;
 		const rightWidth = visibleWidth(right);

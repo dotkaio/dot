@@ -1,7 +1,7 @@
 import type { AssistantMessage } from "@dotkaio/dot-ai";
 import { Container, Markdown, type MarkdownTheme, Spacer, Text, truncateToWidth } from "@dotkaio/dot-tui";
 import type { MarkdownTransformer } from "../../../core/extensions/types.ts";
-import { getTerminalOutputBudget } from "../../../core/terminal-output-budget.ts";
+import { getTerminalOutputBudget, isFullOutputMode } from "../../../core/terminal-output-budget.ts";
 import { getMarkdownTheme, theme } from "../theme/theme.ts";
 import { createMarkdownTransform } from "./markdown-transform.ts";
 
@@ -81,8 +81,13 @@ export class AssistantMessageComponent extends Container {
 
 	override render(width: number): string[] {
 		let lines = super.render(width);
-		const requestedMaxRows = this.getMaxRows();
-		const maxRows = Number.isFinite(requestedMaxRows) ? Math.max(1, Math.floor(requestedMaxRows)) : 1;
+		const requestedMaxRows = isFullOutputMode() ? Number.POSITIVE_INFINITY : this.getMaxRows();
+		const maxRows =
+			requestedMaxRows === Number.POSITIVE_INFINITY
+				? Number.POSITIVE_INFINITY
+				: Number.isFinite(requestedMaxRows)
+					? Math.max(1, Math.floor(requestedMaxRows))
+					: 1;
 		if (lines.length > maxRows) {
 			// Bound only the rendered copy. The complete message remains available when the terminal grows and in session data.
 			const visibleContentRows = maxRows - 1;

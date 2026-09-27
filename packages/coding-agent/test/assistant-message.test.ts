@@ -1,5 +1,6 @@
 import type { AssistantMessage } from "@dotkaio/dot-ai";
 import { describe, expect, test } from "vitest";
+import { isFullOutputMode, toggleFullOutputMode } from "../src/core/terminal-output-budget.ts";
 import { AssistantMessageComponent } from "../src/modes/interactive/components/assistant-message.ts";
 import { UserMessageComponent } from "../src/modes/interactive/components/user-message.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
@@ -219,6 +220,34 @@ describe("AssistantMessageComponent", () => {
 		lines = component.render(40);
 		expect(stripAnsi(lines.join("\n"))).not.toContain("rows omitted to fit terminal");
 		expect(stripAnsi(lines.join("\n"))).toContain("line 1");
+	});
+
+	test("full output mode renders every row and ignores the terminal budget", () => {
+		initTheme("dark");
+		const component = new AssistantMessageComponent(
+			createAssistantMessage([
+				{ type: "text", text: Array.from({ length: 12 }, (_, index) => `line ${index + 1}`).join("\n") },
+			]),
+			false,
+			undefined,
+			"Thinking...",
+			1,
+			[],
+			() => 6,
+		);
+
+		try {
+			toggleFullOutputMode(); // enable
+			const lines = component.render(40);
+			expect(lines.length).toBeGreaterThan(6);
+			expect(stripAnsi(lines.join("\n"))).not.toContain("rows omitted to fit terminal");
+			expect(stripAnsi(lines.join("\n"))).toContain("line 1");
+			expect(stripAnsi(lines.join("\n"))).toContain("line 12");
+		} finally {
+			while (isFullOutputMode()) {
+				toggleFullOutputMode(); // restore default truncated mode
+			}
+		}
 	});
 
 	test("continues the Markdown transformer chain when a transformer throws", () => {

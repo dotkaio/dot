@@ -25,6 +25,8 @@ Dot discovers skills from:
 - `.agents/skills/`
 - Installed [Dot packages](packages.md)
 
-Invoke a skill with `/skill:name`. Dot can also load a skill when its description matches the task.
+Invoke the example skill above with `/review`. Every skill uses its declared `name` directly as its slash command. Dot can also load a skill when its description matches the task.
+
+Extension commands take precedence over skills, and skills take precedence over prompt templates when names collide. Built-in interactive commands are handled by the TUI first.
 
 Use `--skill <path>` to load an explicit skill and `--no-skills` to disable discovery.

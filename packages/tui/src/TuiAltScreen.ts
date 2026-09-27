@@ -79,6 +79,8 @@ export interface TuiAltScreenOptions {
 	mouse?: boolean;
 	/** Open an OSC 8 hyperlink activated with a primary-button click. */
 	openUrl?: (url: string) => void;
+	/** Write selected text to the host clipboard. OSC 52 is used when omitted or if this rejects. */
+	copyText?: (text: string) => void | Promise<void>;
 }
 
 /** Alternate-screen TUI with a scrollable, application-owned viewport. */
@@ -109,6 +111,7 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 	private readonly wheelScrollLines: number;
 	private readonly mouseEnabled: boolean;
 	private readonly openUrl?: (url: string) => void;
+	private readonly copyText?: (text: string) => void | Promise<void>;
 
 	constructor(
 		terminal: Terminal,
@@ -128,6 +131,7 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 		this.wheelScrollLines = Math.max(1, Math.floor(options.wheelScrollLines ?? 1));
 		this.mouseEnabled = options.mouse ?? true;
 		this.openUrl = options.openUrl;
+		this.copyText = options.copyText;
 		this.addInputListener((data) => this.handleViewportInput(data));
 	}
 
@@ -644,14 +648,14 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 		return { start: Math.max(minColumn, start), end: Math.min(maxColumn, end) };
 	}
 
-	private copySelectionToClipboard(): void {
+	private copySelectionToClipboard(): boolean {
 		const selection = this.getSelectionBounds();
-		if (!selection) return;
+		if (!selection) return false;
 		let sourceLines: readonly string[] = this.previousScreen;
 		if (selection.start.scrollView) {
-			if (!this.currentLayout) return;
+			if (!this.currentLayout) return false;
 			const box = getScrollViewBox(this.currentLayout, selection.start.scrollView);
-			if (!box?.scrollContentLines) return;
+			if (!box?.scrollContentLines) return false;
 			sourceLines = box.scrollContentLines;
 		}
 		const lines: string[] = [];
@@ -665,9 +669,34 @@ export class TuiAltScreen extends TuiBase implements ViewportTUI {
 			);
 		}
 		const text = lines.join("\n");
-		if (text.length === 0) return;
-		this.terminal.write(`\x1b]52;c;${Buffer.from(text).toString("base64")}\x07`);
-		this.flash("Copied!");
+		if (text.length === 0) return false;
+		this.writeClipboardText(text);
+		return true;
+	}
+
+	private writeClipboardText(text: string): void {
+		const writeOsc52 = () => {
+			this.terminal.write(`\x1b]52;c;${Buffer.from(text).toString("base64")}\x07`);
+			this.flash("Copied!");
+		};
+		if (!this.copyText) {
+			writeOsc52();
+			return;
+		}
+
+		try {
+			const result = this.copyText(text);
+			if (!result) {
+				this.flash("Copied!");
+				return;
+			}
+			void result.then(
+				() => this.flash("Copied!"),
+				() => writeOsc52(),
+			);
+		} catch {
+			writeOsc52();
+		}
 	}
 
 	private applySelectionHighlight(text: string): string {

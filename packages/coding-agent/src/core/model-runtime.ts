@@ -46,6 +46,13 @@ import {
 } from "./provider-composer.ts";
 import { withRemoteCatalog } from "./remote-catalog-provider.ts";
 import { RuntimeCredentials } from "./runtime-credentials.ts";
+import {
+	filterModelsByRuntimePolicy,
+	formatRuntimeModelLock,
+	isRuntimeModelAllowed,
+	loadRuntimePolicy,
+	type RuntimePolicy,
+} from "./runtime-policy.ts";
 
 interface ModelRuntimeSnapshot {
 	all: readonly Model<Api>[];
@@ -105,6 +112,7 @@ export class ModelRuntime implements Models {
 	private readonly compositionErrors = new Map<string, string>();
 	private readonly modelsPath: string | undefined;
 	private readonly modelNetworkEnabled: boolean;
+	private readonly runtimePolicy: RuntimePolicy | undefined;
 	private config: ModelConfig;
 	private snapshot: ModelRuntimeSnapshot = {
 		all: [],
@@ -128,6 +136,7 @@ export class ModelRuntime implements Models {
 		this.config = config;
 		this.modelsPath = modelsPath;
 		this.modelNetworkEnabled = modelNetworkEnabled;
+		this.runtimePolicy = loadRuntimePolicy();
 		this.defaultBuiltins = new Map(providers.map((provider) => [provider.id, provider]));
 		for (const [providerId, provider] of this.defaultBuiltins) this.builtins.set(providerId, provider);
 		this.models = createModels({ credentials, modelsStore });
@@ -303,11 +312,12 @@ export class ModelRuntime implements Models {
 	}
 
 	getModels(providerId?: string): readonly Model<Api>[] {
-		return this.models.getModels(providerId);
+		return filterModelsByRuntimePolicy(this.models.getModels(providerId), this.runtimePolicy);
 	}
 
 	getModel(providerId: string, modelId: string): Model<Api> | undefined {
-		return this.models.getModel(providerId, modelId);
+		const model = this.models.getModel(providerId, modelId);
+		return model && isRuntimeModelAllowed(model, this.runtimePolicy) ? model : undefined;
 	}
 
 	async checkAuth(providerId: string): Promise<AuthCheck | undefined> {
@@ -318,21 +328,24 @@ export class ModelRuntime implements Models {
 		if (providerId) {
 			if (this.availabilityRefresh) {
 				await this.availabilityRefresh;
-				return this.snapshot.available.filter((model) => model.provider === providerId);
+				return filterModelsByRuntimePolicy(
+					this.snapshot.available.filter((model) => model.provider === providerId),
+					this.runtimePolicy,
+				);
 			}
 			try {
-				return await this.models.getAvailable(providerId);
+				return filterModelsByRuntimePolicy(await this.models.getAvailable(providerId), this.runtimePolicy);
 			} catch (error) {
 				this.availabilityError = error instanceof Error ? error.message : String(error);
 				throw error;
 			}
 		}
 		await this.refreshAvailability();
-		return this.snapshot.available;
+		return filterModelsByRuntimePolicy(this.snapshot.available, this.runtimePolicy);
 	}
 
 	getAvailableSnapshot(): readonly Model<Api>[] {
-		return this.snapshot.available;
+		return filterModelsByRuntimePolicy(this.snapshot.available, this.runtimePolicy);
 	}
 
 	getError(): string | undefined {
@@ -443,6 +456,12 @@ export class ModelRuntime implements Models {
 		model: Model<Api>,
 		options: (StreamOptions & ModelsStreamTransforms) | undefined,
 	): Promise<{ provider: Provider; model: Model<Api>; options: StreamOptions }> {
+		if (!isRuntimeModelAllowed(model, this.runtimePolicy)) {
+			throw new ModelsError(
+				"model_validation",
+				`Runtime policy permits only ${formatRuntimeModelLock(this.runtimePolicy)}`,
+			);
+		}
 		const provider = this.models.getProvider(model.provider);
 		if (!provider) throw new ModelsError("provider", `Unknown provider: ${model.provider}`);
 		const resolution = await this.getAuth(model, { apiKey: options?.apiKey, env: options?.env });

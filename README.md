@@ -21,6 +21,7 @@ See the [coding-agent README](packages/coding-agent/README.md) and [documentatio
 | [`@dotkaio/dot-agent-core`](packages/agent) | Agent runtime and harness |
 | [`@dotkaio/dot-tui`](packages/tui) | Terminal UI library |
 | [`@dotkaio/dot`](packages/coding-agent) | Dot CLI and SDK |
+| [`@dotkaio/dot-keenable-web-search`](packages/keenable-web-search) | Built-in live web search and page fetch tools |
 | [`@dotkaio/dot-protocol`](packages/protocol) | Client/server wire protocol |
 | [`@dotkaio/dot-client`](packages/client) | Dot client library |
 | [`@dotkaio/dot-server`](packages/server) | Dot server |

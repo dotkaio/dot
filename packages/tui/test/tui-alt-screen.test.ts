@@ -517,6 +517,31 @@ describe("TuiAltScreen", () => {
 		tui.stop();
 	});
 
+	it("uses an injected host clipboard writer for mouse selections", async () => {
+		const terminal = new RecordingTerminal(20, 4);
+		const copied: string[] = [];
+		const tui = new TuiAltScreen(terminal, undefined, undefined, {
+			copyText: (text) => {
+				copied.push(text);
+			},
+		});
+		tui.addChild(new Text("alpha\nbeta\ngamma\ndelta", 0, 0));
+		tui.start();
+		await terminal.waitForRender();
+
+		terminal.sendInput("\x1b[<0;1;1M");
+		terminal.sendInput("\x1b[<32;4;2M");
+		terminal.sendInput("\x1b[<0;4;2m");
+		await terminal.waitForRender();
+		assert.deepStrictEqual(copied, ["alpha\nbeta"]);
+		assert.ok(terminal.events.every((event) => event.type !== "write" || !event.data.includes("\x1b]52;c;")));
+
+		terminal.sendInput("\x1b[99;9u");
+		await terminal.waitForRender();
+		assert.deepStrictEqual(copied, ["alpha\nbeta", "alpha\nbeta"]);
+		tui.stop();
+	});
+
 	it("ignores orphan selection events and cancels an active selection on focus loss", async () => {
 		const terminal = new RecordingTerminal(20, 4);
 		const tui = new TuiAltScreen(terminal);

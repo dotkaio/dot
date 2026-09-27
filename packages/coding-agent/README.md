@@ -141,7 +141,7 @@ Standard editing keybindings for delete word, undo, etc. See [docs/keybindings.m
 
 ### Commands
 
-Type `/` in the editor to trigger commands. [Extensions](#extensions) can register custom commands, [skills](#skills) are available as `/skill:name`, and [prompt templates](#prompt-templates) expand via `/templatename`.
+Type `/` in the editor to trigger commands. [Extensions](#extensions) can register custom commands, [skills](#skills) use their declared names directly (for example, `/review`), and [prompt templates](#prompt-templates) expand via `/templatename`.
 
 | Command | Description |
 |---------|-------------|
@@ -323,7 +323,7 @@ Place in `~/.dot/agent/prompts/`, `.dot/prompts/`, or a [dot package](#dot-packa
 
 ### Skills
 
-On-demand capability packages following the [Agent Skills standard](https://agentskills.io). Invoke via `/skill:name` or let the agent load them automatically.
+On-demand capability packages following the [Agent Skills standard](https://agentskills.io). Invoke a skill directly by its declared name (for example, `/review`) or let the agent load it automatically.
 
 ```markdown
 <!-- ~/.dot/agent/skills/my-skill/SKILL.md -->

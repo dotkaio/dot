@@ -1,4 +1,5 @@
 import { APP_NAME } from "../config.ts";
+import { isRuntimeCommandDisabled, type RuntimePolicy } from "./runtime-policy.ts";
 import type { SourceInfo } from "./source-info.ts";
 
 export type SlashCommandSource = "extension" | "prompt" | "skill";
@@ -40,3 +41,7 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "reload", description: "Reload keybindings, extensions, skills, prompts, themes, and context files" },
 	{ name: "quit", description: `Quit ${APP_NAME}` },
 ];
+
+export function getEnabledBuiltinSlashCommands(policy: RuntimePolicy | undefined): readonly BuiltinSlashCommand[] {
+	return BUILTIN_SLASH_COMMANDS.filter((command) => !isRuntimeCommandDisabled(command.name, policy));
+}

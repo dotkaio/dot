@@ -90,11 +90,13 @@ import {
 import { DefaultPackageManager } from "../../core/package-manager.ts";
 import { isVercelAiGatewayProvider } from "../../core/provider-spend.ts";
 import type { ResourceDiagnostic } from "../../core/resource-loader.ts";
+import { isRuntimeCommandDisabled, loadRuntimePolicy, type RuntimePolicy } from "../../core/runtime-policy.ts";
 import { formatMissingSessionCwdPrompt, MissingSessionCwdError } from "../../core/session-cwd.ts";
 import { type SessionEntry, SessionManager, sessionEntryToContextMessages } from "../../core/session-manager.ts";
 import type { UiMode } from "../../core/settings-manager.ts";
-import { BUILTIN_SLASH_COMMANDS } from "../../core/slash-commands.ts";
+import { BUILTIN_SLASH_COMMANDS, getEnabledBuiltinSlashCommands } from "../../core/slash-commands.ts";
 import type { SourceInfo } from "../../core/source-info.ts";
+import { toggleFullOutputMode } from "../../core/terminal-output-budget.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
 import { getUsageCostBreakdown } from "../../core/usage-totals.ts";
@@ -215,6 +217,13 @@ function isDeadTerminalError(error: unknown): boolean {
 	return code !== undefined && DEAD_TERMINAL_ERROR_CODES.has(code);
 }
 
+export function formatTimeAwareStartupGreeting(date: Date): string {
+	const hour = date.getHours();
+	if (hour >= 5 && hour < 12) return "Good morning, how can I help you today?";
+	if (hour >= 12 && hour < 18) return "Good afternoon, how can I help you today?";
+	return "Good night, how can I help you today?";
+}
+
 const ANTHROPIC_SUBSCRIPTION_AUTH_WARNING =
 	"Anthropic subscription auth is active. Third-party harness usage draws from extra usage and is billed per token, not your Claude plan limits. Manage extra usage at https://claude.ai/settings/usage. Disable this warning in /settings.";
 
@@ -305,10 +314,6 @@ function formatLoginProviderCompletionDescription(provider: LoginProviderComplet
 	return provider.name === provider.id ? authTypes : `${provider.name} · ${authTypes}`;
 }
 
-function formatSkillCommandLabel(skillName: string): string {
-	return skillName.startsWith("apple-") ? skillName.slice("apple-".length) : skillName;
-}
-
 /**
  * Options for InteractiveMode initialization.
  */
@@ -336,13 +341,17 @@ interface InteractiveTuiOptions {
 	showHardwareCursor: boolean;
 	logDirectory: string;
 	terminal?: Terminal;
+	copyText?: (text: string) => void | Promise<void>;
 }
 
 /** Composition root for selecting the interactive terminal renderer. */
 export function createInteractiveTui(options: InteractiveTuiOptions): TUI {
 	const terminal = options.terminal ?? new ProcessTerminal();
 	if (options.uiMode === "fullscreen") {
-		return new TuiAltScreen(terminal, options.showHardwareCursor, options.logDirectory, { openUrl: openBrowser });
+		return new TuiAltScreen(terminal, options.showHardwareCursor, options.logDirectory, {
+			openUrl: openBrowser,
+			copyText: options.copyText ?? copyToClipboard,
+		});
 	}
 	return new TuiMainScreen(terminal, options.showHardwareCursor, options.logDirectory);
 }
@@ -460,6 +469,7 @@ export class InteractiveMode {
 	private options: InteractiveModeOptions;
 	private autoTrustOnReloadCwd: string | undefined;
 	private themeController: InteractiveThemeController;
+	private readonly runtimePolicy: RuntimePolicy | undefined;
 
 	// Convenience accessors
 	private get session(): AgentSession {
@@ -477,6 +487,7 @@ export class InteractiveMode {
 
 	constructor(runtimeHost: AgentSessionRuntime, options: InteractiveModeOptions = {}) {
 		this.runtimeHost = runtimeHost;
+		this.runtimePolicy = loadRuntimePolicy();
 		const uiMode = options.uiMode ?? this.settingsManager.getUiMode();
 		this.options = { ...options, uiMode };
 		this.autoTrustOnReloadCwd = options.autoTrustOnReloadCwd;
@@ -516,7 +527,7 @@ export class InteractiveMode {
 		this.editorContainer = new Container();
 		this.editorContainer.addChild(this.editor as Component);
 		this.footerDataProvider = new FooterDataProvider(this.sessionManager.getCwd());
-		this.footer = new FooterComponent(this.session, this.footerDataProvider);
+		this.footer = new FooterComponent(this.session, this.footerDataProvider, this.runtimePolicy?.footerLabel);
 		this.footer.setAutoCompactEnabled(this.session.autoCompactionEnabled);
 		this.footerContainer = new Container();
 		this.footerContainer.addChild(this.footer);
@@ -552,7 +563,7 @@ export class InteractiveMode {
 
 	private createBaseAutocompleteProvider(): AutocompleteProvider {
 		// Define commands for autocomplete
-		const slashCommands: SlashCommand[] = BUILTIN_SLASH_COMMANDS.map((command) => ({
+		const slashCommands: SlashCommand[] = getEnabledBuiltinSlashCommands(this.runtimePolicy).map((command) => ({
 			name: command.name,
 			description: command.description,
 			...(command.argumentHint && { argumentHint: command.argumentHint }),
@@ -629,18 +640,18 @@ export class InteractiveMode {
 		const skillCommandList: AutocompleteItem[] = [];
 		if (this.settingsManager.getEnableSkillCommands()) {
 			for (const skill of this.session.resourceLoader.getSkills().skills) {
-				const commandName = `skill:${skill.name}`;
+				const commandName = skill.name;
 				this.skillCommands.set(commandName, skill.filePath);
 				skillCommandList.push({
 					value: commandName,
-					label: formatSkillCommandLabel(skill.name),
+					label: skill.name,
 					description: skill.description,
 				});
 			}
 		}
 
 		return new CombinedAutocompleteProvider(
-			[...slashCommands, ...templateCommands, ...extensionCommands, ...skillCommandList],
+			[...slashCommands, ...extensionCommands, ...skillCommandList, ...templateCommands],
 			this.sessionManager.getCwd(),
 			this.fdPath,
 		);
@@ -699,8 +710,10 @@ export class InteractiveMode {
 
 		this.registerSignalHandlers();
 
+		const cleanStartup = this.runtimePolicy?.cleanStartup === true;
+
 		// Load changelog (only show new entries, skip for resumed sessions)
-		this.changelogMarkdown = this.getChangelogForDisplay();
+		this.changelogMarkdown = cleanStartup ? undefined : this.getChangelogForDisplay();
 
 		// Ensure fd and rg are available (downloads if missing, adds to PATH via getBinDir)
 		// Both are needed: fd for autocomplete, rg for grep tool and bash commands
@@ -767,7 +780,7 @@ export class InteractiveMode {
 		await this.themeController.applyFromSettings();
 
 		// Add header with keybindings from config (unless silenced)
-		if (this.options.verbose || !this.settingsManager.getQuietStartup()) {
+		if (!cleanStartup && (this.options.verbose || !this.settingsManager.getQuietStartup())) {
 			const logo = theme.bold(theme.fg("accent", APP_NAME)) + theme.fg("dim", ` v${this.version}`);
 
 			// Build startup instructions using keybinding hint helpers
@@ -784,6 +797,7 @@ export class InteractiveMode {
 				rawKeyHint(`${keyText("app.model.cycleForward")}/${keyText("app.model.cycleBackward")}`, "to cycle models"),
 				hint("app.model.select", "to select model"),
 				hint("app.tools.expand", "to expand tools"),
+				hint("app.output.toggleFull", "to show full output"),
 				hint("app.thinking.toggle", "to expand thinking"),
 				hint("app.editor.external", "for external editor"),
 				rawKeyHint("/", "for commands"),
@@ -831,8 +845,12 @@ export class InteractiveMode {
 		// Initialize extensions first so resources are shown before messages
 		await this.rebindCurrentSession();
 
-		// Render initial messages AFTER showing loaded resources
-		this.renderInitialMessages();
+		if (cleanStartup) {
+			this.chatContainer.addChild(new Text(formatTimeAwareStartupGreeting(new Date()), 1, 0));
+		} else {
+			// Render initial messages AFTER showing loaded resources
+			this.renderInitialMessages();
+		}
 
 		// Set up theme file watcher
 		onThemeChange(() => {
@@ -882,52 +900,57 @@ export class InteractiveMode {
 				.catch(() => {});
 		}
 
-		// Start the package version check asynchronously.
-		checkForNewDotVersion(this.version).then((newRelease) => {
-			if (newRelease) {
-				this.showNewVersionNotification(newRelease);
-			}
-		});
-
-		// Start package update check asynchronously
-		this.checkForPackageUpdates()
-			.then((updates) => {
-				if (updates.length > 0) {
-					this.showPackageUpdateNotification(updates);
-				}
-			})
-			.finally(() => {
-				// On Windows, npm can overwrite the shared console title while checking
-				// extension package versions. Restore dot's title after the startup check.
-				if (process.platform === "win32" && this.isInitialized) {
-					this.updateTerminalTitle();
+		const cleanStartup = this.runtimePolicy?.cleanStartup === true;
+		if (!cleanStartup) {
+			// Start the package version check asynchronously.
+			checkForNewDotVersion(this.version).then((newRelease) => {
+				if (newRelease) {
+					this.showNewVersionNotification(newRelease);
 				}
 			});
 
-		// Check tmux keyboard setup asynchronously
-		this.checkTmuxKeyboardSetup().then((warning) => {
-			if (warning) {
-				this.showWarning(warning);
-			}
-		});
+			// Start package update check asynchronously
+			this.checkForPackageUpdates()
+				.then((updates) => {
+					if (updates.length > 0) {
+						this.showPackageUpdateNotification(updates);
+					}
+				})
+				.finally(() => {
+					// On Windows, npm can overwrite the shared console title while checking
+					// extension package versions. Restore dot's title after the startup check.
+					if (process.platform === "win32" && this.isInitialized) {
+						this.updateTerminalTitle();
+					}
+				});
+
+			// Check tmux keyboard setup asynchronously
+			this.checkTmuxKeyboardSetup().then((warning) => {
+				if (warning) {
+					this.showWarning(warning);
+				}
+			});
+		}
 
 		// Show startup warnings
 		const { migratedProviders, modelFallbackMessage, initialMessage, initialImages, initialMessages } = this.options;
 
-		if (migratedProviders && migratedProviders.length > 0) {
-			this.showWarning(`Migrated credentials to auth.json: ${migratedProviders.join(", ")}`);
-		}
+		if (!cleanStartup) {
+			if (migratedProviders && migratedProviders.length > 0) {
+				this.showWarning(`Migrated credentials to auth.json: ${migratedProviders.join(", ")}`);
+			}
 
-		const modelsJsonError = this.session.modelRuntime.getError();
-		if (modelsJsonError) {
-			this.showError(`models.json error: ${modelsJsonError}`);
-		}
+			const modelsJsonError = this.session.modelRuntime.getError();
+			if (modelsJsonError) {
+				this.showError(`models.json error: ${modelsJsonError}`);
+			}
 
-		if (modelFallbackMessage) {
-			this.showWarning(modelFallbackMessage);
-		}
+			if (modelFallbackMessage) {
+				this.showWarning(modelFallbackMessage);
+			}
 
-		void this.maybeWarnAboutAnthropicSubscriptionAuth();
+			void this.maybeWarnAboutAnthropicSubscriptionAuth();
+		}
 
 		// Process initial messages
 		if (initialMessage) {
@@ -1729,8 +1752,10 @@ export class InteractiveMode {
 
 		const extensionRunner = this.session.extensionRunner;
 		this.setupExtensionShortcuts(extensionRunner);
-		this.showLoadedResources({ force: false, showDiagnosticsWhenQuiet: true });
-		this.showStartupNoticesIfNeeded();
+		if (!this.runtimePolicy?.cleanStartup) {
+			this.showLoadedResources({ force: false, showDiagnosticsWhenQuiet: true });
+			this.showStartupNoticesIfNeeded();
+		}
 	}
 
 	private applyFullscreenScrollbarSetting(): void {
@@ -2592,6 +2617,14 @@ export class InteractiveMode {
 	// Key Handlers
 	// =========================================================================
 
+	private runIfCommandEnabled(command: string, action: () => void): void {
+		if (isRuntimeCommandDisabled(command, this.runtimePolicy)) {
+			this.showWarning(`/${command} is disabled by runtime policy.`);
+			return;
+		}
+		action();
+	}
+
 	private setupKeyHandlers(): void {
 		// Set up handlers on defaultEditor - they use this.editor for text access
 		// so they work correctly regardless of which editor is active
@@ -2611,9 +2644,9 @@ export class InteractiveMode {
 					const now = Date.now();
 					if (now - this.lastEscapeTime < 500) {
 						if (action === "tree") {
-							this.showTreeSelector();
+							this.runIfCommandEnabled("tree", () => this.showTreeSelector());
 						} else {
-							this.showUserMessageSelector();
+							this.runIfCommandEnabled("fork", () => this.showUserMessageSelector());
 						}
 						this.lastEscapeTime = 0;
 					} else {
@@ -2630,22 +2663,39 @@ export class InteractiveMode {
 		this.defaultEditor.onAction("app.thinking.cycle", () => this.cycleThinkingLevel());
 		this.defaultEditor.onAction("app.thinking.decrease", () => this.adjustThinkingLevel(-1));
 		this.defaultEditor.onAction("app.thinking.increase", () => this.adjustThinkingLevel(1));
-		this.defaultEditor.onAction("app.model.cycleForward", () => this.cycleModel("forward"));
-		this.defaultEditor.onAction("app.model.cycleBackward", () => this.cycleModel("backward"));
+		this.defaultEditor.onAction("app.model.cycleForward", () =>
+			this.runIfCommandEnabled("model", () => void this.cycleModel("forward")),
+		);
+		this.defaultEditor.onAction("app.model.cycleBackward", () =>
+			this.runIfCommandEnabled("model", () => void this.cycleModel("backward")),
+		);
 
 		// Global debug handler on TUI (works regardless of focus)
 		this.ui.onDebug = () => this.handleDebugCommand();
-		this.defaultEditor.onAction("app.model.select", () => this.showModelSelector());
+		this.defaultEditor.onAction("app.model.select", () =>
+			this.runIfCommandEnabled("model", () => this.showModelSelector()),
+		);
 		this.defaultEditor.onAction("app.tools.expand", () => this.toggleToolOutputExpansion());
+		this.defaultEditor.onAction("app.output.toggleFull", () => this.toggleFullOutput());
 		this.defaultEditor.onAction("app.thinking.toggle", () => this.toggleThinkingBlockVisibility());
 		this.defaultEditor.onAction("app.editor.external", () => void this.handleOpenExternalEditor());
-		this.defaultEditor.onAction("app.message.copy", () => void this.handleCopyCommand());
+		this.defaultEditor.onAction("app.message.copy", () =>
+			this.runIfCommandEnabled("copy", () => void this.handleCopyCommand()),
+		);
 		this.defaultEditor.onAction("app.message.followUp", () => this.handleFollowUp());
 		this.defaultEditor.onAction("app.message.dequeue", () => this.handleDequeue());
-		this.defaultEditor.onAction("app.session.new", () => this.handleClearCommand());
-		this.defaultEditor.onAction("app.session.tree", () => this.showTreeSelector());
-		this.defaultEditor.onAction("app.session.fork", () => this.showUserMessageSelector());
-		this.defaultEditor.onAction("app.session.resume", () => this.showSessionSelector());
+		this.defaultEditor.onAction("app.session.new", () =>
+			this.runIfCommandEnabled("new", () => void this.handleClearCommand()),
+		);
+		this.defaultEditor.onAction("app.session.tree", () =>
+			this.runIfCommandEnabled("tree", () => this.showTreeSelector()),
+		);
+		this.defaultEditor.onAction("app.session.fork", () =>
+			this.runIfCommandEnabled("fork", () => this.showUserMessageSelector()),
+		);
+		this.defaultEditor.onAction("app.session.resume", () =>
+			this.runIfCommandEnabled("resume", () => this.showSessionSelector()),
+		);
 
 		this.defaultEditor.onChange = (text: string) => {
 			const wasBashMode = this.isBashMode;
@@ -2691,6 +2741,13 @@ export class InteractiveMode {
 		this.defaultEditor.onSubmit = async (text: string) => {
 			text = text.trim();
 			if (!text) return;
+
+			const commandName = text.startsWith("/") ? text.slice(1).split(/\s/u, 1)[0] : undefined;
+			if (commandName && isRuntimeCommandDisabled(commandName, this.runtimePolicy)) {
+				this.editor.setText("");
+				this.showWarning(`/${commandName} is disabled by runtime policy.`);
+				return;
+			}
 
 			// Handle commands
 			if (text === "/settings") {
@@ -3890,6 +3947,14 @@ export class InteractiveMode {
 			}
 		}
 		this.showStatus(`Tool output: ${expanded ? "expanded" : "collapsed"}`);
+	}
+
+	private toggleFullOutput(): void {
+		const full = toggleFullOutputMode();
+		// Assistant message components cache rendered lines; invalidate so truncation re-evaluates.
+		this.ui.invalidate();
+		this.ui.requestRender();
+		this.showStatus(`Full output: ${full ? "shown" : "truncated to terminal"}`);
 	}
 
 	private toggleThinkingBlockVisibility(): void {
@@ -5864,6 +5929,7 @@ export class InteractiveMode {
 		const cycleModelForward = this.getAppKeyDisplay("app.model.cycleForward");
 		const selectModel = this.getAppKeyDisplay("app.model.select");
 		const expandTools = this.getAppKeyDisplay("app.tools.expand");
+		const toggleFullOutput = this.getAppKeyDisplay("app.output.toggleFull");
 		const toggleThinking = this.getAppKeyDisplay("app.thinking.toggle");
 		const externalEditor = this.getAppKeyDisplay("app.editor.external");
 		const cycleModelBackward = this.getAppKeyDisplay("app.model.cycleBackward");
@@ -5913,6 +5979,7 @@ export class InteractiveMode {
 | \`${cycleModelForward}\` / \`${cycleModelBackward}\` | Cycle models |
 | \`${selectModel}\` | Open model selector |
 | \`${expandTools}\` | Toggle tool output expansion |
+| \`${toggleFullOutput}\` | Toggle full output (show omitted rows) |
 | \`${toggleThinking}\` | Toggle thinking block visibility |
 | \`${externalEditor}\` | Edit message in external editor |
 | \`${copyMessage}\` | Copy last assistant message |

@@ -1,9 +1,11 @@
+import type { CredentialStore } from "@dotkaio/dot-ai";
 import { type ExecFileException, execFile, spawnSync } from "child_process";
 import { existsSync, type FSWatcher, readFileSync, type Stats, statSync, unwatchFile, watchFile } from "fs";
 import { dirname, join, resolve } from "path";
 import { closeWatcher, FS_WATCH_RETRY_DELAY_MS, watchWithErrorHandler } from "../utils/fs-watch.ts";
+import { AuthStorage } from "./auth-storage.ts";
 import { fetchStoredCodexWeeklyRemainingPercent } from "./codex-usage.ts";
-import { FileProviderSpendStore, type ProviderSpendStore } from "./provider-spend.ts";
+import { FileProviderSpendStore, type ProviderSpendStore, VERCEL_AI_GATEWAY_PROVIDER } from "./provider-spend.ts";
 
 export type GitPaths = {
 	repoDir: string;
@@ -99,6 +101,8 @@ const AI_GATEWAY_CREDITS_URL = "https://ai-gateway.vercel.sh/v1/credits";
 export type FooterDataProviderOptions = {
 	/** Override lifetime provider-spend store (tests). Defaults to ~/.dot/agent/provider-spend.json. */
 	providerSpendStore?: ProviderSpendStore;
+	/** Override credential store (tests). Defaults to ~/.dot/agent/auth.json. */
+	credentials?: Pick<CredentialStore, "read">;
 	/** Override Codex weekly-limit fetcher (tests). Defaults to the OAuth credential in auth.json. */
 	codexWeeklyLimitFetcher?: () => Promise<number | null>;
 };
@@ -147,11 +151,13 @@ export class FooterDataProvider {
 	private refreshPending = false;
 	private disposed = false;
 	private readonly providerSpendStore: ProviderSpendStore;
+	private readonly credentials: Pick<CredentialStore, "read">;
 	private readonly codexWeeklyLimitFetcher: () => Promise<number | null>;
 
 	constructor(cwd: string, options?: FooterDataProviderOptions) {
 		this.cwd = cwd;
 		this.providerSpendStore = options?.providerSpendStore ?? new FileProviderSpendStore();
+		this.credentials = options?.credentials ?? AuthStorage.create();
 		this.codexWeeklyLimitFetcher = options?.codexWeeklyLimitFetcher ?? fetchStoredCodexWeeklyRemainingPercent;
 		this.gitPaths = findGitPaths(cwd);
 		this.setupGitWatcher();
@@ -275,7 +281,13 @@ export class FooterDataProvider {
 		}
 		this.balanceRefreshInFlight = true;
 		try {
-			const apiKey = process.env.AI_GATEWAY_API_KEY?.trim();
+			const credential = await this.credentials.read(VERCEL_AI_GATEWAY_PROVIDER);
+			const apiKey =
+				credential === undefined
+					? process.env.AI_GATEWAY_API_KEY?.trim()
+					: credential.type === "api_key"
+						? credential.key?.trim()
+						: undefined;
 			if (!apiKey) {
 				this.setAiGatewayBalanceFromApi(null);
 				return;

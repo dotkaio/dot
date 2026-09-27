@@ -29,16 +29,25 @@ describe("createInteractiveTui", () => {
 		mainTui.stop();
 
 		const altTerminal = new RecordingTerminal();
+		const copyText = vi.fn<(text: string) => void>();
 		const altTui = createInteractiveTui({
 			uiMode: "fullscreen",
 			showHardwareCursor: false,
 			logDirectory: "/tmp",
 			terminal: altTerminal,
+			copyText,
 		});
+		altTui.addChild(new Text("copy me", 0, 0));
 		expect(isViewportTUI(altTui)).toBe(true);
 		altTui.start();
 		await altTerminal.waitForRender();
 		expect(altTerminal.writes.some((write) => write.includes("\x1b[?1049h"))).toBe(true);
+
+		altTerminal.sendInput("\x1b[<0;1;1M");
+		altTerminal.sendInput("\x1b[<32;4;1M");
+		altTerminal.sendInput("\x1b[<0;4;1m");
+		await altTerminal.waitForRender();
+		expect(copyText).toHaveBeenCalledWith("copy");
 		altTui.stop();
 	});
 });

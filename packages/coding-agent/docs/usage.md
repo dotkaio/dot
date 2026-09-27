@@ -32,7 +32,7 @@ See [Keybindings](keybindings.md) for all shortcuts and customization.
 
 ## Slash Commands
 
-Type `/` in the editor to open command completion. Extensions can register custom commands, skills are available as `/skill:name`, and prompt templates expand via `/templatename`.
+Type `/` in the editor to open command completion. Extensions can register custom commands, skills use their declared names directly (for example, `/review`), and prompt templates expand via `/templatename`.
 
 | Command | Description |
 |---------|-------------|

@@ -1,0 +1,59 @@
+{
+	"name": "@dotkaio/dot-keenable-web-search",
+	"version": "0.0.1",
+	"description": "Built-in Keenable web search and page fetch tools for Dot",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"CHANGELOG.md"
+	],
+	"scripts": {
+		"clean": "shx rm -rf dist",
+		"build": "tsgo -p tsconfig.build.json",
+		"test": "vitest --run",
+		"prepublishOnly": "npm run clean && npm run build"
+	},
+	"dot": {
+		"extensions": [
+			"./dist/index.js"
+		]
+	},
+	"keywords": [
+		"dot",
+		"dot-package",
+		"keenable",
+		"web-search",
+		"research"
+	],
+	"author": "dotkaio",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dotkaio/dot.git",
+		"directory": "packages/keenable-web-search"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	},
+	"dependencies": {
+		"typebox": "1.3.7"
+	},
+	"devDependencies": {
+		"shx": "0.4.0",
+		"vitest": "4.1.9"
+	},
+	"homepage": "https://github.com/dotkaio/dot#readme",
+	"bugs": {
+		"url": "https://github.com/dotkaio/dot/issues"
+	}
+}

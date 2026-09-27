@@ -80,10 +80,13 @@ Modifier combinations: `ctrl+shift+x`, `alt+ctrl+x`, `ctrl+shift+alt+x`, `super+
 
 ### TUI Fullscreen Viewport
 
-These actions apply when interactive mode uses `--ui-mode fullscreen` and target the primary transcript scroll region. Two-finger trackpad and mouse-wheel input scroll the region under the pointer, falling back to the transcript over the fixed editor/status/footer dock. Clicking an OSC 8 hyperlink opens it in the default handler. Dragging with the primary mouse button selects text and copies it to the clipboard; holding at the transcript's top or bottom edge auto-scrolls into off-screen content.
+These actions apply when interactive mode uses `--ui-mode fullscreen` and target the primary transcript scroll region. Two-finger trackpad and mouse-wheel input scroll the region under the pointer, falling back to the transcript over the fixed editor/status/footer dock. Clicking an OSC 8 hyperlink opens it in the default handler. Dragging with the primary mouse button selects text and copies it through the host clipboard integration; holding at the transcript's top or bottom edge auto-scrolls into off-screen content.
+
+Press Command+C without a selection to enter copy mode at the mouse cursor. Arrow, word, line, page, Home, and End navigation moves the copy cursor; Shift plus the corresponding selection keys extends a selection. Command+C copies and exits, while Escape or Ctrl+C cancels. In Apple Terminal, Dot detects the native Command+C chord because Terminal consumes it before stdin.
 
 | Keybinding id | Default | Description |
 |--------|---------|-------------|
+| `tui.altScreen.copyMode` | `super+c` | Enter keyboard copy mode or copy its selection |
 | `tui.altScreen.pageUp` | `pageUp` | Scroll the transcript up by one page |
 | `tui.altScreen.pageDown` | `pageDown` | Scroll the transcript down by one page |
 | `tui.altScreen.previousPrompt` | `ctrl+shift+up` | Jump to the previous marked message |
@@ -133,6 +136,7 @@ These actions apply when interactive mode uses `--ui-mode fullscreen` and target
 | Keybinding id | Default | Description |
 |--------|---------|-------------|
 | `app.tools.expand` | `ctrl+o` | Collapse or expand tool output |
+| `app.output.toggleFull` | `ctrl+h` | Toggle full assistant output, showing rows normally omitted to fit the terminal |
 | `app.message.copy` | `ctrl+x` | Copy the last assistant message, or the selected message in `/tree` |
 | `app.message.followUp` | `alt+enter` | Queue follow-up message |
 | `app.message.dequeue` | `alt+up` | Restore queued messages to editor |

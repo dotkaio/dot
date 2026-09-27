@@ -882,12 +882,12 @@ dot.on("user_bash", (event, ctx) => {
 
 #### input
 
-Fired when user input is received, after extension commands are checked but before skill and template expansion. The event sees the raw input text, so `/skill:foo` and `/template` are not yet expanded.
+Fired when user input is received, after extension commands are checked but before skill and template expansion. The event sees the raw input text, so a direct skill command such as `/foo` and a prompt template such as `/template` are not yet expanded.
 
 **Processing order:**
 1. Extension commands (`/cmd`) checked first - if found, handler runs and input event is skipped
 2. `input` event fires - can intercept, transform, or handle
-3. If not handled: skill commands (`/skill:name`) expanded to skill content
+3. If not handled: skill commands (`/name`) expanded to skill content
 4. If not handled: prompt templates (`/template`) expanded to template content
 5. Agent processing begins (`before_agent_start`, etc.)
 
@@ -913,8 +913,8 @@ dot.on("input", async (event, ctx) => {
   // Route by source: skip processing for extension-injected messages
   if (event.source === "extension") return { action: "continue" };
 
-  // Intercept skill commands before expansion
-  if (event.text.startsWith("/skill:")) {
+  // Intercept a known skill command before expansion
+  if (event.text === "/foo" || event.text.startsWith("/foo ")) {
     // Could transform, block, or let pass through
   }
 
@@ -1527,8 +1527,8 @@ dot.registerCommand("deploy", {
 
 ### dot.getCommands()
 
-Get the slash commands available for invocation via `prompt` in the current session. Includes extension commands, prompt templates, and skill commands.
-The list matches the RPC `get_commands` ordering: extensions first, then templates, then skills.
+Get the slash commands available for invocation via `prompt` in the current session. Includes extension commands, skill commands, and prompt templates.
+The list matches the RPC `get_commands` ordering: extensions first, then skills, then prompts.
 
 ```typescript
 const commands = dot.getCommands();

@@ -30,6 +30,7 @@ export interface AppKeybindings {
 	"app.model.sortByIq": true;
 	"app.model.sortByReleaseDate": true;
 	"app.tools.expand": true;
+	"app.output.toggleFull": true;
 	"app.thinking.toggle": true;
 	"app.session.toggleNamedFilter": true;
 	"app.editor.external": true;
@@ -110,6 +111,10 @@ export const KEYBINDINGS = {
 	"app.model.sortByIq": { defaultKeys: "shift+q", description: "Sort model list by Intelligence Index (IQ)" },
 	"app.model.sortByReleaseDate": { defaultKeys: "shift+r", description: "Sort model list by release date" },
 	"app.tools.expand": { defaultKeys: "ctrl+o", description: "Toggle tool output" },
+	"app.output.toggleFull": {
+		defaultKeys: "ctrl+h",
+		description: "Toggle full assistant output (show omitted rows)",
+	},
 	"app.thinking.toggle": {
 		defaultKeys: "ctrl+t",
 		description: "Toggle thinking blocks",

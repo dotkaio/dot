@@ -1362,9 +1362,16 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 			}
 		}
 
+		// Workers AI remains available through /compat even when models.dev omits it
+		// from the Gateway listing. Keep explicit Gateway metadata when present.
+		const cloudflareGatewayModels = { ...data["cloudflare-ai-gateway"]?.models };
+		for (const [modelId, model] of Object.entries(data["cloudflare-workers-ai"]?.models ?? {})) {
+			cloudflareGatewayModels[`workers-ai/${modelId}`] ??= model;
+		}
+
 		// Process Cloudflare AI Gateway models
-		if (data["cloudflare-ai-gateway"]?.models) {
-			for (const [prefixedId, model] of Object.entries(data["cloudflare-ai-gateway"].models)) {
+		if (Object.keys(cloudflareGatewayModels).length > 0) {
+			for (const [prefixedId, model] of Object.entries(cloudflareGatewayModels)) {
 				const m = model as ModelsDevModel;
 				if (m.tool_call !== true) continue;
 
@@ -1383,7 +1390,9 @@ async function loadModelsDevData(): Promise<Model<any>[]> {
 				} else if (upstream === "anthropic") {
 					api = "anthropic-messages";
 					baseUrl = CLOUDFLARE_AI_GATEWAY_ANTHROPIC_BASE_URL;
-					id = nativeId;
+					// The passthrough requires Anthropic's native ID, not Gateway's dotted alias.
+					const canonicalId = nativeId.replace(/(\d)\.(?=\d)/g, "$1-");
+					id = data.anthropic?.models?.[canonicalId] ? canonicalId : nativeId;
 				} else if (upstream === "workers-ai") {
 					api = "openai-completions";
 					baseUrl = CLOUDFLARE_AI_GATEWAY_COMPAT_BASE_URL;

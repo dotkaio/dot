@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { type Model, modelsAreEqual } from "@dotkaio/dot-ai";
 import {
 	Container,
@@ -10,6 +11,8 @@ import {
 	Text,
 	type TUI,
 } from "@dotkaio/dot-tui";
+import { getAgentDir } from "../../../config.ts";
+import { FileAuthStorageBackend } from "../../../core/auth-storage.ts";
 import type { ModelRuntime } from "../../../core/model-runtime.ts";
 import type { SettingsManager } from "../../../core/settings-manager.ts";
 import { getModelSelectorSearchText } from "../model-search.ts";
@@ -76,15 +79,42 @@ export interface ArtificialAnalysisScores {
 	canonical: ReadonlyMap<string, number>;
 }
 
+export interface ArtificialAnalysisDataManifest {
+	path: string;
+	key: string;
+}
+
+interface ArtificialAnalysisCacheEntry {
+	fetchedAt: number;
+	scores: ArtificialAnalysisScores;
+}
+
+interface ArtificialAnalysisFetchResult {
+	complete: boolean;
+	scores: ArtificialAnalysisScores;
+}
+
+interface StoredArtificialAnalysisScores {
+	version: number;
+	fetchedAt: number;
+	exact: Array<[string, number]>;
+	canonical: Array<[string, number]>;
+}
+
 interface HttpResponse {
 	ok: boolean;
+	arrayBuffer(): Promise<ArrayBuffer>;
 	json(): Promise<unknown>;
 	text(): Promise<string>;
 }
 
 const VERCEL_MODELS_URL = "https://ai-gateway.vercel.sh/v1/models";
 const ARTIFICIAL_ANALYSIS_INTELLIGENCE_URL = "https://artificialanalysis.ai/#intelligence";
+const ARTIFICIAL_ANALYSIS_CACHE_FILE = "model-iq-cache.json";
+const ARTIFICIAL_ANALYSIS_CACHE_VERSION = 1;
+export const ARTIFICIAL_ANALYSIS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 let vercelReleaseDatesPromise: Promise<Map<string, string>> | undefined;
+let artificialAnalysisCacheEntry: ArtificialAnalysisCacheEntry | undefined;
 let artificialAnalysisScoresPromise: Promise<ArtificialAnalysisScores> | undefined;
 
 const PROVIDER_TO_VERCEL_OWNER: Record<string, string> = {
@@ -243,6 +273,82 @@ function emptyArtificialAnalysisScores(): ArtificialAnalysisScores {
 	return { exact: new Map<string, number>(), canonical: new Map<string, number>() };
 }
 
+function parseStoredScoreEntries(value: unknown): Map<string, number> | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const scores = new Map<string, number>();
+	for (const entry of value) {
+		if (
+			!Array.isArray(entry) ||
+			entry.length !== 2 ||
+			typeof entry[0] !== "string" ||
+			typeof entry[1] !== "number" ||
+			!Number.isFinite(entry[1])
+		) {
+			return undefined;
+		}
+		scores.set(entry[0], entry[1]);
+	}
+	return scores;
+}
+
+function parseArtificialAnalysisCache(content: string | undefined): ArtificialAnalysisCacheEntry | undefined {
+	if (!content) return undefined;
+	try {
+		const value = JSON.parse(content) as unknown;
+		if (value === null || typeof value !== "object") return undefined;
+		const record = value as Record<string, unknown>;
+		if (
+			record.version !== ARTIFICIAL_ANALYSIS_CACHE_VERSION ||
+			typeof record.fetchedAt !== "number" ||
+			!Number.isFinite(record.fetchedAt)
+		) {
+			return undefined;
+		}
+		const exact = parseStoredScoreEntries(record.exact);
+		const canonical = parseStoredScoreEntries(record.canonical);
+		if (!exact || !canonical) return undefined;
+		return { fetchedAt: record.fetchedAt, scores: { exact, canonical } };
+	} catch {
+		return undefined;
+	}
+}
+
+export function isArtificialAnalysisCacheFresh(fetchedAt: number, now: number = Date.now()): boolean {
+	const age = now - fetchedAt;
+	return Number.isFinite(fetchedAt) && age >= 0 && age < ARTIFICIAL_ANALYSIS_CACHE_TTL_MS;
+}
+
+function getArtificialAnalysisCacheStorage(): FileAuthStorageBackend {
+	return new FileAuthStorageBackend(join(getAgentDir(), ARTIFICIAL_ANALYSIS_CACHE_FILE));
+}
+
+function readArtificialAnalysisCache(): ArtificialAnalysisCacheEntry | undefined {
+	try {
+		return getArtificialAnalysisCacheStorage().withLock((content) => ({
+			result: parseArtificialAnalysisCache(content),
+		}));
+	} catch {
+		return undefined;
+	}
+}
+
+async function writeArtificialAnalysisCache(entry: ArtificialAnalysisCacheEntry): Promise<void> {
+	const stored: StoredArtificialAnalysisScores = {
+		version: ARTIFICIAL_ANALYSIS_CACHE_VERSION,
+		fetchedAt: entry.fetchedAt,
+		exact: [...entry.scores.exact],
+		canonical: [...entry.scores.canonical],
+	};
+	try {
+		await getArtificialAnalysisCacheStorage().withLockAsync(async () => ({
+			result: undefined,
+			next: JSON.stringify(stored, null, 2),
+		}));
+	} catch {
+		// IQ metadata remains usable in memory when the cache is not writable.
+	}
+}
+
 function normalizeArtificialAnalysisKey(value: string): string {
 	return value
 		.toLowerCase()
@@ -265,7 +371,7 @@ function canonicalizeArtificialAnalysisKey(value: string): string {
 	key = key
 		.replace(/^(?:accounts-)?fireworks-(?:models|routers)-/u, "")
 		.replace(/^(?:global|us|eu|ap|au|jp|ca|me)-/u, "")
-		.replace(/^(?:anthropic|openai|google|xai|meta|amazon|deepseek|mistralai|mistral|qwen|zai|z-ai)-/u, "");
+		.replace(/^(?:anthropic|openai|google|xai|meta|amazon|deepseek|mistralai|mistral|zai|z-ai)-/u, "");
 	key = key
 		.replace(/-\d{4}-\d{2}-\d{2}(?=-|$)/gu, "")
 		.replace(/-\d{2}-\d{4}(?=-|$)/gu, "")
@@ -280,7 +386,7 @@ function canonicalizeArtificialAnalysisKey(value: string): string {
 	do {
 		previous = key;
 		key = key.replace(
-			/-(?:adaptive-reasoning|max-effort|non-reasoning|highthinking|nothinking|max|xhigh|high|medium|minimal|low|thinking|base|preview|latest|instruct|chat|fast|instant|free)(?=-|$)/gu,
+			/-(?:adaptive-reasoning|max-effort|non-reasoning|highthinking|nothinking|max|xhigh|high|medium|minimal|low|thinking|base|preview|latest|instruct|chat|highspeed|lightning|fast|instant|free)(?=-|$)/gu,
 			"",
 		);
 	} while (key !== previous);
@@ -327,6 +433,10 @@ function expandArtificialAnalysisKeyVariants(value: string): string[] {
 	if (claudeReordered) {
 		variants.add(`claude-${claudeReordered[2]}-${claudeReordered[1]}`);
 	}
+
+	// Qwen provider IDs use both qwen-3-* and qwen3-* for the same model family.
+	if (/^qwen-\d/u.test(base)) variants.add(base.replace(/^qwen-(?=\d)/u, "qwen"));
+	if (/^qwen\d/u.test(base)) variants.add(base.replace(/^qwen(?=\d)/u, "qwen-"));
 
 	// Fallback only when a specific product tier is not ranked separately on AA
 	// (e.g. o3-pro -> o3, gpt-5.5-pro -> gpt-5.5, glm-5.2-fast already stripped above).
@@ -380,7 +490,7 @@ function collectArtificialAnalysisScoresFromValue(
 		typeof record.shortName === "string" ||
 		typeof record.label === "string" ||
 		typeof detailsUrl === "string";
-	if (score !== undefined && hasModelIdentity && record.deprecated !== true) {
+	if (score !== undefined && hasModelIdentity) {
 		for (const key of [record.name, record.shortName, record.slug, record.id, record.label, detailsUrl]) {
 			if (typeof key !== "string" || !key) continue;
 			setBestScore(exact, normalizeArtificialAnalysisKey(key), score);
@@ -461,6 +571,26 @@ function parseArtificialAnalysisSchemaPayloads(html: string): unknown[] {
 	return payloads;
 }
 
+function parseArtificialAnalysisFlightPayloads(value: string): unknown[] {
+	try {
+		const direct = JSON.parse(value) as unknown;
+		if (direct !== null && typeof direct === "object") return [direct];
+	} catch {}
+
+	const payloads: unknown[] = [];
+	for (const line of value.split("\n")) {
+		const separator = line.indexOf(":");
+		if (separator < 0) continue;
+		const candidate = line.slice(separator + 1).trim();
+		if (!candidate.startsWith("[") && !candidate.startsWith("{")) continue;
+		try {
+			const payload = JSON.parse(candidate) as unknown;
+			if (payload !== null && typeof payload === "object") payloads.push(payload);
+		} catch {}
+	}
+	return payloads;
+}
+
 function parseArtificialAnalysisPayloadScoreData(html: string): unknown[] {
 	const scriptPattern = /self\.__next_f\.push\(\[1,\s*("(?:(?:\\.|[^"\\])*)")\]\)/gu;
 	const payloads: unknown[] = [];
@@ -476,14 +606,8 @@ function parseArtificialAnalysisPayloadScoreData(html: string): unknown[] {
 		}
 
 		if (typeof parsedPayload === "string") {
-			try {
-				parsedPayload = JSON.parse(parsedPayload);
-			} catch {
-				continue;
-			}
-		}
-
-		if (parsedPayload !== null && typeof parsedPayload === "object") {
+			payloads.push(...parseArtificialAnalysisFlightPayloads(parsedPayload));
+		} else if (parsedPayload !== null && typeof parsedPayload === "object") {
 			payloads.push(parsedPayload);
 		}
 	}
@@ -493,6 +617,57 @@ function parseArtificialAnalysisPayloadScoreData(html: string): unknown[] {
 		...parseArtificialAnalysisInitialDataPayloads(html),
 		...parseArtificialAnalysisSchemaPayloads(html),
 	];
+}
+
+function collectArtificialAnalysisDataManifests(
+	value: unknown,
+	manifests: Map<string, ArtificialAnalysisDataManifest>,
+): void {
+	if (value === null || typeof value !== "object") return;
+	if (Array.isArray(value)) {
+		for (const item of value) collectArtificialAnalysisDataManifests(item, manifests);
+		return;
+	}
+
+	const record = value as Record<string, unknown>;
+	if (
+		typeof record.path === "string" &&
+		record.path.startsWith("/data/") &&
+		typeof record.key === "string" &&
+		/^[a-f0-9]{64}$/iu.test(record.key)
+	) {
+		manifests.set(`${record.path}\u0000${record.key}`, { path: record.path, key: record.key });
+	}
+	for (const nested of Object.values(record)) {
+		collectArtificialAnalysisDataManifests(nested, manifests);
+	}
+}
+
+export function parseArtificialAnalysisDataManifests(html: string): ArtificialAnalysisDataManifest[] {
+	const manifests = new Map<string, ArtificialAnalysisDataManifest>();
+	for (const payload of parseArtificialAnalysisPayloadScoreData(html)) {
+		collectArtificialAnalysisDataManifests(payload, manifests);
+	}
+	return [...manifests.values()];
+}
+
+function hexToBytes(value: string): Uint8Array {
+	if (!/^[a-f0-9]{64}$/iu.test(value)) throw new Error("Invalid Artificial Analysis data key");
+	const bytes = new Uint8Array(value.length / 2);
+	for (let index = 0; index < value.length; index += 2) {
+		bytes[index / 2] = Number.parseInt(value.slice(index, index + 2), 16);
+	}
+	return bytes;
+}
+
+export async function decryptArtificialAnalysisPayload(encrypted: ArrayBuffer, keyHex: string): Promise<unknown> {
+	const keyBytes = hexToBytes(keyHex);
+	const digest = await crypto.subtle.digest("SHA-256", keyBytes);
+	const iv = new Uint8Array(digest).slice(0, 12);
+	const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, ["decrypt"]);
+	const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv, tagLength: 128 }, key, encrypted);
+	const decompressed = new Blob([decrypted]).stream().pipeThrough(new DecompressionStream("gzip"));
+	return JSON.parse(await new Response(decompressed).text()) as unknown;
 }
 
 function detailsUrlToModelSlug(value: string): string | undefined {
@@ -522,18 +697,66 @@ export function parseArtificialAnalysisScores(html: string): ArtificialAnalysisS
 	return { exact, canonical };
 }
 
-async function fetchArtificialAnalysisScores(url: string): Promise<ArtificialAnalysisScores> {
+async function fetchArtificialAnalysisManifest(manifest: ArtificialAnalysisDataManifest): Promise<unknown> {
+	const url = new URL(manifest.path, ARTIFICIAL_ANALYSIS_INTELLIGENCE_URL).href;
+	const response = await fetchHttp(url);
+	if (!response.ok) throw new Error(`Artificial Analysis data request failed: ${manifest.path}`);
+	return decryptArtificialAnalysisPayload(await response.arrayBuffer(), manifest.key);
+}
+
+async function fetchArtificialAnalysisScores(url: string): Promise<ArtificialAnalysisFetchResult> {
 	try {
 		const response = await fetchHttp(url);
-		return response.ok ? parseArtificialAnalysisScores(await response.text()) : emptyArtificialAnalysisScores();
+		if (!response.ok) return { complete: false, scores: emptyArtificialAnalysisScores() };
+		const html = await response.text();
+		const pageScores = parseArtificialAnalysisScores(html);
+		const manifests = parseArtificialAnalysisDataManifests(html);
+		if (manifests.length === 0) return { complete: false, scores: pageScores };
+
+		try {
+			const payloads = await Promise.all(manifests.map(fetchArtificialAnalysisManifest));
+			const exact = new Map(pageScores.exact);
+			const canonical = new Map(pageScores.canonical);
+			for (const payload of payloads) {
+				collectArtificialAnalysisScoresFromValue(payload, exact, canonical);
+			}
+			return { complete: true, scores: { exact, canonical } };
+		} catch {
+			return { complete: false, scores: pageScores };
+		}
 	} catch {
-		return emptyArtificialAnalysisScores();
+		return { complete: false, scores: emptyArtificialAnalysisScores() };
 	}
+}
+
+async function refreshArtificialAnalysisScores(
+	cached: ArtificialAnalysisCacheEntry | undefined,
+): Promise<ArtificialAnalysisScores> {
+	const result = await fetchArtificialAnalysisScores(ARTIFICIAL_ANALYSIS_INTELLIGENCE_URL);
+	if (!result.complete || result.scores.exact.size === 0) {
+		return cached?.scores ?? result.scores;
+	}
+
+	const entry = { fetchedAt: Date.now(), scores: result.scores };
+	artificialAnalysisCacheEntry = entry;
+	await writeArtificialAnalysisCache(entry);
+	return entry.scores;
 }
 
 async function getArtificialAnalysisScores(): Promise<ArtificialAnalysisScores> {
 	if (process.env.DOT_OFFLINE === "1") return emptyArtificialAnalysisScores();
-	artificialAnalysisScoresPromise ??= fetchArtificialAnalysisScores(ARTIFICIAL_ANALYSIS_INTELLIGENCE_URL);
+	const now = Date.now();
+	let cached = artificialAnalysisCacheEntry;
+	if (!cached || !isArtificialAnalysisCacheFresh(cached.fetchedAt, now)) {
+		const stored = readArtificialAnalysisCache();
+		if (stored && (!cached || stored.fetchedAt > cached.fetchedAt)) cached = stored;
+		artificialAnalysisCacheEntry = cached;
+	}
+	if (cached && isArtificialAnalysisCacheFresh(cached.fetchedAt, now)) return cached.scores;
+
+	artificialAnalysisScoresPromise ??= refreshArtificialAnalysisScores(cached).finally(() => {
+		artificialAnalysisScoresPromise = undefined;
+	});
 	return artificialAnalysisScoresPromise;
 }
 

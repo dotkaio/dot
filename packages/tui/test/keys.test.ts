@@ -313,13 +313,12 @@ describe("matchesKey", () => {
 			assert.strictEqual(matchesKey("\x1b", "escape"), true);
 		});
 
-		it("should match legacy linefeed as enter", () => {
+		it("should treat linefeed as shift+enter", () => {
 			setKittyProtocolActive(false);
-			assert.strictEqual(matchesKey("\n", "enter"), true);
-			assert.strictEqual(parseKey("\n"), "enter");
-		});
+			assert.strictEqual(matchesKey("\n", "shift+enter"), true);
+			assert.strictEqual(matchesKey("\n", "enter"), false);
+			assert.strictEqual(parseKey("\n"), "shift+enter");
 
-		it("should treat linefeed as shift+enter when kitty active", () => {
 			setKittyProtocolActive(true);
 			assert.strictEqual(matchesKey("\n", "shift+enter"), true);
 			assert.strictEqual(matchesKey("\n", "enter"), false);
@@ -584,7 +583,7 @@ describe("parseKey", () => {
 			assert.strictEqual(parseKey("\x1b"), "escape");
 			assert.strictEqual(parseKey("\t"), "tab");
 			assert.strictEqual(parseKey("\r"), "enter");
-			assert.strictEqual(parseKey("\n"), "enter");
+			assert.strictEqual(parseKey("\n"), "shift+enter");
 			assert.strictEqual(parseKey("\x00"), "ctrl+space");
 			assert.strictEqual(parseKey(" "), "space");
 			assert.strictEqual(parseKey("1"), "1");

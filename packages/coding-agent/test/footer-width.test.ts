@@ -180,6 +180,24 @@ describe("FooterComponent simplified row", () => {
 		expect(line.trimEnd().endsWith("vercel • deepseek-v4-flash-0731 • off")).toBe(true);
 	});
 
+	it("replaces all right-side model information with a fixed installation label", () => {
+		const footer = new FooterComponent(
+			createSession({
+				sessionName: "",
+				provider: "vercel-ai-gateway",
+				modelId: "deepseek/deepseek-v4-flash-0731",
+				thinkingLevel: "medium",
+			}),
+			createFooterData(1, 34.8855),
+			"Abiy's agent",
+		);
+
+		const line = stripAnsi(footer.render(80)[0]);
+		expect(line.trimEnd().endsWith("Abiy's agent")).toBe(true);
+		expect(line).not.toContain("deepseek-v4-flash-0731");
+		expect(line).not.toContain("medium");
+	});
+
 	it("shows Codex weekly remaining between provider spend and context", () => {
 		const footer = new FooterComponent(
 			createSession({

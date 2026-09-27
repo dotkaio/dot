@@ -37,6 +37,7 @@ vi.mock("child_process", () => ({
 	}),
 }));
 
+import { AuthStorage } from "../src/core/auth-storage.ts";
 import { FooterDataProvider } from "../src/core/footer-data-provider.ts";
 
 type WorktreeFixture = {
@@ -300,6 +301,28 @@ describe("FooterDataProvider AI Gateway balance", () => {
 			process.env.AI_GATEWAY_API_KEY = originalApiKey;
 		}
 		rmSync(tempDir, { recursive: true, force: true });
+	});
+
+	it("uses a stored AI Gateway credential when the environment key is absent", async () => {
+		delete process.env.AI_GATEWAY_API_KEY;
+		globalThis.fetch = vi.fn(async (_input, init) => {
+			expect(init?.headers).toEqual({
+				Authorization: "Bearer stored-key",
+				Accept: "application/json",
+			});
+			return mockCreditsResponse("12.50");
+		}) as unknown as typeof fetch;
+		const provider = new FooterDataProvider(tempDir, {
+			credentials: AuthStorage.inMemory({
+				"vercel-ai-gateway": { type: "api_key", key: "stored-key" },
+			}),
+		});
+		try {
+			await waitFor(() => provider.getAiGatewayBalance() !== null);
+			expect(provider.getAiGatewayBalance()).toBe(12.5);
+		} finally {
+			provider.dispose();
+		}
 	});
 
 	it("applies local spend immediately for real-time remaining balance", async () => {
