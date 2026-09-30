@@ -79,6 +79,24 @@ describe("builtin providers", () => {
 		}
 	});
 
+	it("registers Meta Model API (Muse) with a hand-maintained catalog and official pricing", () => {
+		const models = builtinModels();
+		expect(models.getProviders().map((p) => p.id)).toContain("muse");
+
+		const spark = models.getModel("muse", "muse-spark-1.3");
+		expect(spark?.api).toBe("openai-responses");
+		expect(spark?.baseUrl).toBe("https://api.meta.ai/v1");
+		expect(spark?.cost).toEqual({ input: 1.25, output: 4.25, cacheRead: 0.15, cacheWrite: 0 });
+		expect(spark?.contextWindow).toBe(1048576);
+		expect(spark?.maxTokens).toBe(131072);
+		expect(models.getModel("muse", "muse-spark-1.3-contributor")?.cost).toEqual({
+			input: 0.1,
+			output: 0.2,
+			cacheRead: 0.002,
+			cacheWrite: 0,
+		});
+	});
+
 	it("resolves Anthropic bearer auth from env with auth token precedence", async () => {
 		const models = createModels({
 			authContext: fakeAuthContext({

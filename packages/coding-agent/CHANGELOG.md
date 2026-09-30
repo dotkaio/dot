@@ -15,6 +15,7 @@
 
 ### Added
 
+- Muse (Meta Model API) provider with `muse-spark-*` models is available from `/login` using a Meta API key (`MODEL_API_KEY` or `META_API_KEY`).
 - `ctrl+h` toggles full assistant output, showing rows normally omitted to fit the terminal.
 - Runtime policies can lock an installation to one model, disable built-in commands, equivalent hotkeys, and built-in extensions, replace the footer identity label, and present a clean time-aware startup greeting.
 - Built-in `web_search` and `web_fetch` tools provide live, citable Keenable research with keyless defaults and optional API-key authentication.

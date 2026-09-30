@@ -24,6 +24,7 @@ import { minimaxCnProvider } from "./minimax-cn.ts";
 import { mistralProvider } from "./mistral.ts";
 import { moonshotaiProvider } from "./moonshotai.ts";
 import { moonshotaiCnProvider } from "./moonshotai-cn.ts";
+import { museProvider } from "./muse.ts";
 import { nvidiaProvider } from "./nvidia.ts";
 import { openaiProvider } from "./openai.ts";
 import { openaiCodexProvider } from "./openai-codex.ts";
@@ -108,6 +109,7 @@ export function builtinProviders(): Provider[] {
 		mistralProvider(),
 		moonshotaiProvider(),
 		moonshotaiCnProvider(),
+		museProvider(),
 		nvidiaProvider(),
 		openaiProvider(),
 		openaiCodexProvider(),

@@ -76,6 +76,11 @@ function getApiKeyEnvVars(provider: string): readonly string[] | undefined {
 		return [ANTHROPIC_AUTH_TOKEN_ENV, ANTHROPIC_OAUTH_TOKEN_ENV, ANTHROPIC_API_KEY_ENV];
 	}
 
+	// Meta Model API documents MODEL_API_KEY; Muse Code also honors META_API_KEY.
+	if (provider === "muse") {
+		return ["MODEL_API_KEY", "META_API_KEY"];
+	}
+
 	const envMap: Record<string, string> = {
 		"ant-ling": "ANT_LING_API_KEY",
 		"qwen-token-plan": "QWEN_TOKEN_PLAN_API_KEY",
