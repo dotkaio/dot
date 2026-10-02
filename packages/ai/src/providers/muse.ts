@@ -1,5 +1,6 @@
 import { openAIResponsesApi } from "../api/openai-responses.lazy.ts";
-import { envApiKeyAuth } from "../auth/helpers.ts";
+import { envApiKeyAuth, lazyOAuth } from "../auth/helpers.ts";
+import { loadMuseOAuth } from "../auth/oauth/load.ts";
 import { createProvider, type Provider } from "../models.ts";
 import type { Model } from "../types.ts";
 
@@ -68,6 +69,11 @@ export function museProvider(): Provider<"openai-responses"> {
 		baseUrl: "https://api.meta.ai/v1",
 		auth: {
 			apiKey: envApiKeyAuth("Meta Model API key", ["MODEL_API_KEY", "META_API_KEY"]),
+			oauth: lazyOAuth({
+				name: "Muse (Meta account)",
+				loginLabel: "Sign in with a Meta account",
+				load: loadMuseOAuth,
+			}),
 		},
 		models: MUSE_MODELS,
 		api: openAIResponsesApi(),

@@ -17,6 +17,7 @@ type OAuthFlowLoaders = {
 	githubCopilot: () => OAuthAuth | Promise<OAuthAuth>;
 	openrouter: () => OAuthAuth | Promise<OAuthAuth>;
 	kimiCoding: () => OAuthAuth | Promise<OAuthAuth>;
+	muse: () => OAuthAuth | Promise<OAuthAuth>;
 	xai: () => OAuthAuth | Promise<OAuthAuth>;
 	googleGeminiCli: () => OAuthAuth | Promise<OAuthAuth>;
 	radius: (options: { name: string; gateway: string }) => OAuthAuth | Promise<OAuthAuth>;
@@ -52,6 +53,11 @@ export const loadOpenRouterOAuth = async (): Promise<OAuthAuth> => {
 export const loadKimiCodingOAuth = async (): Promise<OAuthAuth> => {
 	if (bundledLoaders) return bundledLoaders.kimiCoding();
 	return ((await importOAuthModule("./kimi-coding.ts")) as { kimiCodingOAuth: OAuthAuth }).kimiCodingOAuth;
+};
+
+export const loadMuseOAuth = async (): Promise<OAuthAuth> => {
+	if (bundledLoaders) return bundledLoaders.muse();
+	return ((await importOAuthModule("./muse.ts")) as { museOAuth: OAuthAuth }).museOAuth;
 };
 
 export const loadXaiOAuth = async (): Promise<OAuthAuth> => {
