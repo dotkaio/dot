@@ -31,6 +31,7 @@ Dot runs in four modes: interactive, print or JSON, RPC for process integration,
 - [Programmatic Usage](#programmatic-usage)
 - [Philosophy](#philosophy)
 - [CLI Reference](#cli-reference)
+  - [Shell Completions](#shell-completions)
 
 ---
 
@@ -485,6 +486,28 @@ Dot is aggressively extensible so it doesn't have to dictate your workflow. Feat
 ```bash
 dot [options] [@files...] [messages...]
 ```
+
+### Shell Completions
+
+Print a zsh completion script:
+
+```bash
+dot completion zsh
+```
+
+Install it on zsh's fpath (before `compinit` runs):
+
+```bash
+mkdir -p ~/.zfunc
+dot completion zsh > ~/.zfunc/_dot
+```
+
+```zsh
+# ~/.zshrc — before compinit
+fpath=(~/.zfunc $fpath)
+```
+
+The script covers subcommands, CLI flags, built-in tool names, thinking levels, UI modes, and session files for `--session`, `--fork`, and `--export`. Regenerate it after changing the CLI.
 
 ### Package Commands
 

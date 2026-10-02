@@ -16,6 +16,7 @@
 ### Added
 
 - Muse (Meta Model API) provider with `muse-spark-*` models is available from `/login` using a Meta API key (`MODEL_API_KEY` or `META_API_KEY`).
+- `dot completion zsh` prints a zsh completion script covering subcommands, flags, tool names, thinking levels, and session files. Store it on fpath with `dot completion zsh > ~/.zfunc/_dot` and add `fpath=(~/.zfunc $fpath)` before compinit.
 - `ctrl+h` toggles full assistant output, showing rows normally omitted to fit the terminal.
 - Runtime policies can lock an installation to one model, disable built-in commands, equivalent hotkeys, and built-in extensions, replace the footer identity label, and present a clean time-aware startup greeting.
 - Built-in `web_search` and `web_fetch` tools provide live, citable Keenable research with keyless defaults and optional API-key authentication.

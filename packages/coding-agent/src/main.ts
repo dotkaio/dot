@@ -9,6 +9,7 @@ import { createInterface } from "node:readline";
 import { type ImageContent, modelsAreEqual } from "@dotkaio/dot-ai";
 import chalk from "chalk";
 import { type Args, type Mode, parseArgs, printHelp } from "./cli/args.ts";
+import { handleCompletionCommand } from "./cli/completions.ts";
 import {
 	type CredentialPrintCommand,
 	CredentialPrintError,
@@ -520,6 +521,9 @@ export interface MainOptions {
 
 export async function main(args: string[], options?: MainOptions) {
 	resetTimings();
+	if (handleCompletionCommand(args)) {
+		return;
+	}
 	const extensionFactories = [...getBuiltInExtensions(loadRuntimePolicy()), ...(options?.extensionFactories ?? [])];
 	const offlineMode = args.includes("--offline") || isTruthyEnvFlag(process.env.DOT_OFFLINE);
 	if (offlineMode) {
