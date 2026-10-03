@@ -249,7 +249,7 @@ models.setProvider(anthropicProvider());
 models.setProvider(openrouterProvider());
 ```
 
-Provider factories import their model catalog and a lazy API wrapper. They do not import other providers. With bundler code splitting, SDK implementations (`@anthropic-ai/sdk`, `openai`, `@google/genai`, etc.) stay in lazy chunks loaded on the first request to a model of that API.
+Provider factories import their model catalog and a lazy API wrapper. They do not import other providers. With bundler code splitting, SDK implementations (`openai`, `@google/genai`, etc.) stay in lazy chunks loaded on the first request to a model of that API. The Anthropic Messages adapter uses native fetch and does not require an SDK.
 
 ### All Built-in Providers
 
@@ -1150,7 +1150,7 @@ Built-in API implementations live under `./api/<api-id>`:
 | `mistral-conversations` | `MistralOptions` |
 | `bedrock-converse-stream` | `BedrockOptions` |
 
-Importing an implementation module loads its SDK. The `./api/<id>.lazy` wrappers (used by the provider factories) defer that load to the first request when the runtime or bundler supports dynamic import chunking. Legacy raw API subpaths from older releases (`./anthropic`, `./google`, `./mistral`, `./openai-completions`, ...) were removed; use `@dotkaio/dot-ai/api/<api-id>`.
+Importing an implementation module loads its SDK where one is used; `anthropic-messages` uses native fetch. The `./api/<id>.lazy` wrappers (used by the provider factories) defer that load to the first request when the runtime or bundler supports dynamic import chunking. Legacy raw API subpaths from older releases (`./anthropic`, `./google`, `./mistral`, `./openai-completions`, ...) were removed; use `@dotkaio/dot-ai/api/<api-id>`.
 
 ### OpenAI Compatibility Settings
 
@@ -1402,8 +1402,8 @@ Rules:
 - `@dotkaio/dot-ai/providers/<provider>` imports that provider's catalog and lazy API wrapper only.
 - `@dotkaio/dot-ai/providers/all` imports every built-in provider factory and all catalogs. Use it only when you want the full built-in set.
 - With code splitting, provider SDKs stay in lazy chunks and load on first request.
-- Without code splitting, bundlers fold reachable lazy API implementations into the single bundle. A single-provider bundle then includes that provider's SDK; `providers/all` includes all statically visible SDKs. Bedrock is the exception: its AWS SDK implementation is loaded through a bundler-opaque Node-only import.
-- Importing `@dotkaio/dot-ai/api/<api-id>` directly loads that API implementation and its SDK immediately.
+- Without code splitting, bundlers fold reachable lazy API implementations into the single bundle, including SDKs where used. Anthropic Messages uses native fetch, so an Anthropic-only bundle includes no provider SDK. Bedrock's AWS SDK implementation is loaded through a bundler-opaque Node-only import.
+- Importing `@dotkaio/dot-ai/api/<api-id>` directly loads that API implementation and any SDK it uses immediately.
 
 Avoid `@dotkaio/dot-ai/compat` in new bundled apps; it preserves the old global API and imports the full built-in catalog surface.
 

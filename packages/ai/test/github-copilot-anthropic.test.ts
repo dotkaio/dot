@@ -1,52 +1,36 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { stream as streamAnthropic } from "../src/api/anthropic-messages.ts";
 import { getModel } from "../src/compat.ts";
 import { getSupportedThinkingLevels } from "../src/models.ts";
 import type { Context } from "../src/types.ts";
 
-const mockState = vi.hoisted(() => ({
-	constructorOpts: undefined as Record<string, unknown> | undefined,
-	createParams: undefined as Record<string, unknown> | undefined,
-}));
+const mockState: { headers?: Headers; createParams?: Record<string, unknown> } = {};
 
-vi.mock("@anthropic-ai/sdk", () => {
-	function createSseResponse(): Response {
-		const body = [
-			`event: message_start\ndata: ${JSON.stringify({
-				type: "message_start",
-				message: {
-					id: "msg_test",
-					usage: { input_tokens: 10, output_tokens: 0 },
+beforeEach(() => {
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (_url: unknown, init?: RequestInit) => {
+			mockState.headers = new Headers(init?.headers);
+			mockState.createParams = JSON.parse(String(init?.body)) as Record<string, unknown>;
+			const events = [
+				{ type: "message_start", message: { id: "msg_test", usage: { input_tokens: 1, output_tokens: 0 } } },
+				{ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 1 } },
+				{ type: "message_stop" },
+			];
+			return new Response(
+				events.map((event) => `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`).join(""),
+				{
+					headers: { "content-type": "text/event-stream" },
 				},
-			})}\n`,
-			`event: message_delta\ndata: ${JSON.stringify({
-				type: "message_delta",
-				delta: { stop_reason: "end_turn" },
-				usage: { output_tokens: 5 },
-			})}\n`,
-		].join("\n");
+			);
+		}),
+	);
+});
 
-		return new Response(body, {
-			status: 200,
-			headers: { "content-type": "text/event-stream" },
-		});
-	}
-
-	class FakeAnthropic {
-		constructor(opts: Record<string, unknown>) {
-			mockState.constructorOpts = opts;
-		}
-		messages = {
-			create: (params: Record<string, unknown>) => {
-				mockState.createParams = params;
-				return {
-					asResponse: async () => createSseResponse(),
-				};
-			},
-		};
-	}
-
-	return { default: FakeAnthropic };
+afterEach(() => {
+	vi.unstubAllGlobals();
+	mockState.headers = undefined;
+	mockState.createParams = undefined;
 });
 
 describe("Copilot Claude via Anthropic Messages", () => {
@@ -83,24 +67,22 @@ describe("Copilot Claude via Anthropic Messages", () => {
 			if (event.type === "error") break;
 		}
 
-		const opts = mockState.constructorOpts!;
-		expect(opts).toBeDefined();
+		const headers = mockState.headers!;
+		expect(headers).toBeDefined();
 
-		// Auth: apiKey null, authToken for Bearer
-		expect(opts.apiKey).toBeNull();
-		expect(opts.authToken).toBe("tid_copilot_session_test_token");
-		const headers = opts.defaultHeaders as Record<string, string>;
+		expect(headers.get("x-api-key")).toBeNull();
+		expect(headers.get("authorization")).toBe("Bearer tid_copilot_session_test_token");
 
 		// Copilot static headers from model.headers
-		expect(headers["User-Agent"]).toContain("GitHubCopilotChat");
-		expect(headers["Copilot-Integration-Id"]).toBe("vscode-chat");
+		expect(headers.get("User-Agent")).toContain("GitHubCopilotChat");
+		expect(headers.get("Copilot-Integration-Id")).toBe("vscode-chat");
 
 		// Dynamic headers
-		expect(headers["X-Initiator"]).toBe("user");
-		expect(headers["Openai-Intent"]).toBe("conversation-edits");
+		expect(headers.get("X-Initiator")).toBe("user");
+		expect(headers.get("Openai-Intent")).toBe("conversation-edits");
 
 		// No fine-grained-tool-streaming (Copilot doesn't support it)
-		const beta = headers["anthropic-beta"] ?? "";
+		const beta = headers.get("anthropic-beta") ?? "";
 		expect(beta).not.toContain("fine-grained-tool-streaming");
 
 		// Payload is valid Anthropic Messages format
@@ -121,7 +103,7 @@ describe("Copilot Claude via Anthropic Messages", () => {
 			if (event.type === "error") break;
 		}
 
-		const headers = mockState.constructorOpts!.defaultHeaders as Record<string, string>;
-		expect(headers["anthropic-beta"] ?? "").not.toContain("interleaved-thinking-2025-05-14");
+		const headers = mockState.headers!;
+		expect(headers.get("anthropic-beta") ?? "").not.toContain("interleaved-thinking-2025-05-14");
 	});
 });

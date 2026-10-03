@@ -1,12 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type {
-	CacheControlEphemeral,
-	ContentBlockParam,
-	MessageCreateParamsStreaming,
-	MessageParam,
-	RawMessageStreamEvent,
-	RefusalStopDetails,
-} from "@anthropic-ai/sdk/resources/messages.js";
 import { calculateCost } from "../models.ts";
 import type {
 	AnthropicMessagesCompat,
@@ -36,7 +27,16 @@ import { parseJsonWithRepair, parseStreamingJson } from "../utils/json-parse.ts"
 import { getProviderEnvValue } from "../utils/provider-env.ts";
 import { retryProviderRequest } from "../utils/provider-retry.ts";
 import { sanitizeSurrogates } from "../utils/sanitize-unicode.ts";
-
+import type {
+	AnthropicMessagesClient,
+	CacheControlEphemeral,
+	ContentBlockParam,
+	MessageCreateParamsStreaming,
+	MessageParam,
+	RawMessageStreamEvent,
+	RefusalStopDetails,
+	WireTool,
+} from "./anthropic-wire.ts";
 import { resolveJsonSchemaStrictSampling } from "./constrained-sampling.ts";
 import { buildCopilotDynamicHeaders, hasCopilotVisionInput } from "./github-copilot-headers.ts";
 import { adjustMaxTokensForThinking, buildBaseOptions, clampMaxTokensToContext } from "./simple-options.ts";
@@ -254,18 +254,16 @@ export interface AnthropicOptions extends StreamOptions {
 	 */
 	toolChoice?: "auto" | "any" | "none" | { type: "tool"; name: string };
 	/**
-	 * Pre-built Anthropic client instance. When provided, skips internal client
-	 * construction entirely. Use this to inject alternative SDK clients such as
-	 * `AnthropicVertex` that shares the same messaging API.
+	 * Alternate Messages client. When provided, skips native HTTP transport.
 	 */
-	client?: Anthropic;
+	client?: AnthropicMessagesClient;
 }
 
 function mergeHeaders(...headerSources: (ProviderHeaders | undefined)[]): ProviderHeaders {
 	const merged: ProviderHeaders = {};
 	for (const headers of headerSources) {
 		if (headers) {
-			Object.assign(merged, headers);
+			for (const [name, value] of Object.entries(headers)) merged[name.toLowerCase()] = value;
 		}
 	}
 	return merged;
@@ -511,7 +509,7 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 		};
 
 		try {
-			let client: Anthropic;
+			let client: AnthropicMessagesClient;
 			let isOAuth: boolean;
 
 			if (options?.client) {
@@ -619,7 +617,7 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 							name: isOAuth
 								? fromClaudeCodeName(event.content_block.name, context.tools)
 								: event.content_block.name,
-							arguments: (event.content_block.input as Record<string, any>) ?? {},
+							arguments: (event.content_block.input as Record<string, unknown>) ?? {},
 							partialJson: "",
 							index: event.index,
 						};
@@ -728,11 +726,7 @@ export const stream: StreamFunction<"anthropic-messages", AnthropicOptions> = (
 						if (event.usage.cache_creation_input_tokens != null) {
 							output.usage.cacheWrite = event.usage.cache_creation_input_tokens;
 						}
-						// Anthropic reports reasoning tokens in `output_tokens_details.thinking_tokens` on the
-						// final message_delta usage (a subset of output_tokens). SDK 0.91.1 omits the field from
-						// its Usage type, so read it through a narrow cast. Verified against the live API.
-						const thinkingTokens = (event.usage as { output_tokens_details?: { thinking_tokens?: number } })
-							.output_tokens_details?.thinking_tokens;
+						const thinkingTokens = event.usage.output_tokens_details?.thinking_tokens;
 						if (thinkingTokens != null) {
 							output.usage.reasoning = thinkingTokens;
 						}
@@ -844,6 +838,69 @@ function isOAuthToken(apiKey: string): boolean {
 	return apiKey.includes("sk-ant-oat");
 }
 
+function createHttpClient(config: {
+	apiKey: string | null;
+	authToken: string | null;
+	baseURL: string;
+	fetch?: typeof globalThis.fetch;
+	defaultHeaders: ProviderHeaders;
+}): AnthropicMessagesClient {
+	return {
+		messages: {
+			create: (params, options) => ({
+				asResponse: async () => {
+					const timeoutMs = options.timeout ?? 600_000;
+					if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0) {
+						throw new Error("timeoutMs must be a non-negative integer");
+					}
+					const headers = new Headers({
+						"content-type": "application/json",
+						"anthropic-version": "2023-06-01",
+					});
+					if (config.apiKey) headers.set("x-api-key", config.apiKey);
+					if (config.authToken) headers.set("authorization", `Bearer ${config.authToken}`);
+					for (const [name, value] of Object.entries(config.defaultHeaders)) {
+						if (value === null) headers.delete(name);
+						else headers.set(name, value);
+					}
+					const controller = new AbortController();
+					const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
+					const timeout = setTimeout(() => controller.abort(), timeoutMs);
+					try {
+						const url = new URL(config.baseURL);
+						url.pathname = `${url.pathname.replace(/\/$/, "")}/v1/messages`;
+						const response = await (config.fetch ?? globalThis.fetch)(url.toString(), {
+							method: "POST",
+							headers,
+							body: JSON.stringify(params),
+							signal,
+						});
+						if (!response.ok) {
+							throw Object.assign(new Error(`${response.status} ${await response.text()}`), {
+								status: response.status,
+								headers: response.headers,
+							});
+						}
+						return response;
+					} catch (error) {
+						if (options.signal?.aborted) throw error;
+						if (error instanceof Error && "status" in error) throw error;
+						throw Object.assign(
+							new Error(controller.signal.aborted ? "Request timed out" : "Connection error", { cause: error }),
+							{
+								status: undefined,
+								headers: undefined,
+							},
+						);
+					} finally {
+						clearTimeout(timeout);
+					}
+				},
+			}),
+		},
+	};
+}
+
 function createClient(
 	model: Model<"anthropic-messages">,
 	apiKey: string | undefined,
@@ -853,7 +910,7 @@ function createClient(
 	fetch?: typeof globalThis.fetch,
 	dynamicHeaders?: Record<string, string>,
 	sessionId?: string,
-): { client: Anthropic; isOAuthToken: boolean } {
+): { client: AnthropicMessagesClient; isOAuthToken: boolean } {
 	// Adaptive thinking models have interleaved thinking built in, so skip the beta header.
 	const needsInterleavedBeta = interleavedThinking && model.compat?.forceAdaptiveThinking !== true;
 	const betaFeatures: string[] = [];
@@ -866,11 +923,10 @@ function createClient(
 
 	// Copilot: Bearer auth, selective betas.
 	if (model.provider === "github-copilot") {
-		const client = new Anthropic({
+		const client = createHttpClient({
 			apiKey: null,
 			authToken: apiKey ?? null,
 			baseURL: model.baseUrl,
-			dangerouslyAllowBrowser: true,
 			fetch,
 			defaultHeaders: mergeHeaders(
 				{
@@ -889,11 +945,10 @@ function createClient(
 
 	// OAuth: Bearer auth, Claude Code identity headers
 	if (apiKey && isOAuthToken(apiKey)) {
-		const client = new Anthropic({
+		const client = createHttpClient({
 			apiKey: null,
 			authToken: apiKey,
 			baseURL: model.baseUrl,
-			dangerouslyAllowBrowser: true,
 			fetch,
 			defaultHeaders: mergeHeaders(
 				{
@@ -924,11 +979,10 @@ function createClient(
 		model.headers,
 		optionsHeaders,
 	);
-	const client = new Anthropic({
+	const client = createHttpClient({
 		apiKey: apiKey ?? null,
 		authToken: null,
 		baseURL: model.baseUrl,
-		dangerouslyAllowBrowser: true,
 		fetch,
 		defaultHeaders,
 	});
@@ -1034,13 +1088,7 @@ function buildParams(
 				// Adaptive thinking: Claude decides when and how much to think.
 				params.thinking = { type: "adaptive", display };
 				if (options.effort) {
-					// The Anthropic SDK types can lag newly supported effort values such as "xhigh".
-					params.output_config =
-						options.effort === "xhigh"
-							? ({ effort: options.effort } as unknown as NonNullable<
-									MessageCreateParamsStreaming["output_config"]
-								>)
-							: { effort: options.effort };
+					params.output_config = { effort: options.effort };
 				}
 			} else {
 				// Budget-based thinking for older models
@@ -1263,7 +1311,7 @@ function convertMessages(
 					lastBlock &&
 					(lastBlock.type === "text" || lastBlock.type === "image" || lastBlock.type === "tool_result")
 				) {
-					(lastBlock as any).cache_control = cacheControl;
+					lastBlock.cache_control = cacheControl;
 				}
 			} else if (typeof lastMessage.content === "string") {
 				lastMessage.content = [
@@ -1272,7 +1320,7 @@ function convertMessages(
 						text: lastMessage.content,
 						cache_control: cacheControl,
 					},
-				] as any;
+				];
 			}
 		}
 	}
@@ -1291,7 +1339,7 @@ function convertTools(
 	supportsStrictTools: boolean,
 	cacheControl?: CacheControlEphemeral,
 	deferLoading = false,
-): Anthropic.Messages.Tool[] {
+): WireTool[] {
 	if (!tools) return [];
 
 	return tools.map((tool, index) => {
@@ -1323,7 +1371,7 @@ function convertTools(
 }
 
 function mapStopReason(
-	reason: Anthropic.Messages.StopReason | string,
+	reason: string,
 	stopDetails?: RefusalStopDetails | null,
 ): { stopReason: StopReason; errorMessage?: string } {
 	switch (reason) {

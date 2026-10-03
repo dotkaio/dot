@@ -84,7 +84,7 @@ describe("lazy provider module loading", () => {
 		expect(result.loadedSpecifiers).toEqual([]);
 	});
 
-	it("loads only the Anthropic SDK when streaming through the lazy API wrapper", () => {
+	it("loads no provider SDK when streaming through the lazy API wrapper", () => {
 		const result = runProbe(`
 			const compat = await import(${JSON.stringify(compatEntryUrl)});
 			const model = {
@@ -103,10 +103,10 @@ describe("lazy provider module loading", () => {
 			await compat.anthropicMessagesApi().streamSimple(model, context).result();
 		`);
 
-		expect(result.loadedSpecifiers).toEqual(["@anthropic-ai/sdk"]);
+		expect(result.loadedSpecifiers).toEqual([]);
 	});
 
-	it("loads only the Anthropic SDK when dispatching through streamSimple", () => {
+	it("loads no provider SDK when dispatching through streamSimple", () => {
 		const result = runProbe(`
 			const compat = await import(${JSON.stringify(compatEntryUrl)});
 			const model = compat.getModel("anthropic", "claude-sonnet-4-6");
@@ -114,6 +114,6 @@ describe("lazy provider module loading", () => {
 			await compat.streamSimple(model, context).result();
 		`);
 
-		expect(result.loadedSpecifiers).toEqual(["@anthropic-ai/sdk"]);
+		expect(result.loadedSpecifiers).toEqual([]);
 	});
 });

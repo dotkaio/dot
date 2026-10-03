@@ -1,6 +1,6 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { stream as streamAnthropic } from "../src/api/anthropic-messages.ts";
+import type { AnthropicMessagesClient } from "../src/api/anthropic-wire.ts";
 import { getModel } from "../src/compat.ts";
 import type { Context } from "../src/types.ts";
 
@@ -9,10 +9,10 @@ function createSseResponse(events: Array<{ event: string; data: string }>): Resp
 	return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
 }
 
-function createFakeAnthropicClient(response: Response): Anthropic {
+function createFakeAnthropicClient(response: Response): AnthropicMessagesClient {
 	return {
 		messages: { create: () => ({ asResponse: async () => response }) },
-	} as unknown as Anthropic;
+	} satisfies AnthropicMessagesClient;
 }
 
 function eventsWithCacheCreation(
