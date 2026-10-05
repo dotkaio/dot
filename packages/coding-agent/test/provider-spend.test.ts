@@ -33,9 +33,11 @@ describe("FileProviderSpendStore", () => {
 		const store = new FileProviderSpendStore(path);
 
 		expect(store.getTotal("openai-codex")).toBe(0);
+		expect(store.getTotalSpend()).toBe(0);
 		expect(store.addSpend("openai-codex", 1.25)).toBeCloseTo(1.25, 6);
 		expect(store.addSpend("openai-codex", 0.75)).toBeCloseTo(2.0, 6);
 		expect(store.getTotal("openai-codex")).toBeCloseTo(2.0, 6);
+		expect(store.getTotalSpend()).toBeCloseTo(2.0, 6);
 		expect(store.getTotal("anthropic")).toBe(0);
 
 		// Survives a new store instance on the same file.
@@ -104,7 +106,9 @@ describe("FooterDataProvider provider spend", () => {
 
 			provider.addProviderSpend("openai-codex", 0.1);
 			expect(provider.getProviderSpend("openai-codex")).toBeCloseTo(0.5, 6);
-			expect(onBalanceChange).toHaveBeenCalledTimes(2);
+			provider.addProviderSpend("anthropic", 0.25);
+			expect(provider.getTotalSpend()).toBeCloseTo(0.75, 6);
+			expect(onBalanceChange).toHaveBeenCalledTimes(3);
 		} finally {
 			provider.dispose();
 		}

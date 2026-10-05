@@ -4,6 +4,7 @@ import type { AgentSession } from "../../../core/agent-session.ts";
 import { OPENAI_CODEX_PROVIDER } from "../../../core/codex-usage.ts";
 import type { ReadonlyFooterDataProvider } from "../../../core/footer-data-provider.ts";
 import { isVercelAiGatewayProvider } from "../../../core/provider-spend.ts";
+import type { FooterSettings } from "../../../core/settings-manager.ts";
 import { theme } from "../theme/theme.ts";
 import { INTERACTIVE_HORIZONTAL_MARGIN } from "./layout.ts";
 
@@ -53,18 +54,39 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
 
 /**
  * Single-row footer under the editor:
- * left: `$34.89 • 31% • 12% • $0.12` (total/balance • Codex weekly remaining when active • context used • session cost)
- * right: `provider • unqualified-model • thinking`
+ * left: optional spend • optional Codex weekly remaining • context used • optional session cost
+ * right: optional provider • optional model • thinking
  */
 export class FooterComponent implements Component {
 	private session: AgentSession;
 	private footerData: ReadonlyFooterDataProvider;
 	private readonly rightLabel: string | undefined;
+	private footerSettings: Required<FooterSettings>;
 
-	constructor(session: AgentSession, footerData: ReadonlyFooterDataProvider, rightLabel?: string) {
+	constructor(
+		session: AgentSession,
+		footerData: ReadonlyFooterDataProvider,
+		rightLabel?: string,
+		footerSettings: FooterSettings = {},
+	) {
 		this.session = session;
 		this.footerData = footerData;
 		this.rightLabel = rightLabel;
+		this.footerSettings = this.resolveFooterSettings(footerSettings);
+	}
+
+	setFooterSettings(footerSettings: FooterSettings): void {
+		this.footerSettings = this.resolveFooterSettings(footerSettings);
+	}
+
+	private resolveFooterSettings(settings: FooterSettings): Required<FooterSettings> {
+		return {
+			showSpend: settings.showSpend ?? false,
+			showCodexWeekly: settings.showCodexWeekly ?? false,
+			showSessionCost: settings.showSessionCost ?? false,
+			showProvider: settings.showProvider ?? false,
+			showModel: settings.showModel ?? false,
+		};
 	}
 
 	setSession(session: AgentSession): void {
@@ -102,11 +124,12 @@ export class FooterComponent implements Component {
 		const contextUsage = this.session.getContextUsage();
 		const contextPercentValue = contextUsage?.percent ?? null;
 		const provider = state.model?.provider;
-		const moneyText = isVercelAiGatewayProvider(provider)
-			? formatRemainingBalance(this.footerData.getAiGatewayBalance())
-			: formatCost(this.footerData.getProviderSpend(provider ?? ""));
+		const { showSpend, showCodexWeekly, showSessionCost, showProvider, showModel } = this.footerSettings;
+		const moneyText = formatCost(this.footerData.getTotalSpend());
 		const weeklyLimitText =
-			provider === OPENAI_CODEX_PROVIDER ? this.footerData.getCodexWeeklyRemainingPercent() : null;
+			showCodexWeekly && provider === OPENAI_CODEX_PROVIDER
+				? this.footerData.getCodexWeeklyRemainingPercent()
+				: null;
 		const contextText = formatContextPercent(contextPercentValue);
 
 		// Colorize context percentage based on usage.
@@ -119,10 +142,11 @@ export class FooterComponent implements Component {
 
 		const sessionCostText = formatCost(this.session.getSessionStats().cost);
 
-		const leftParts = [moneyText];
+		const leftParts: string[] = [];
+		if (showSpend) leftParts.push(moneyText);
 		if (weeklyLimitText !== null) leftParts.push(formatContextPercent(weeklyLimitText));
 		leftParts.push(contextColored);
-		leftParts.push(sessionCostText);
+		if (showSessionCost) leftParts.push(sessionCostText);
 		let left = leftParts.join(" • ");
 		let leftWidth = visibleWidth(left);
 		if (leftWidth > contentWidth) {
@@ -133,7 +157,11 @@ export class FooterComponent implements Component {
 		const providerName = isVercelAiGatewayProvider(provider) ? "vercel" : provider || "no-provider";
 		const modelName = state.model?.id.split("/").at(-1) || "no-model";
 		const thinkingLevel = state.thinkingLevel || "off";
-		const right = this.rightLabel ?? `${providerName} • ${modelName} • ${thinkingLevel}`;
+		const rightParts: string[] = [];
+		if (showProvider) rightParts.push(providerName);
+		if (showModel) rightParts.push(modelName);
+		rightParts.push(thinkingLevel);
+		const right = this.rightLabel ?? rightParts.join(" • ");
 
 		const minPadding = 2;
 		const rightWidth = visibleWidth(right);

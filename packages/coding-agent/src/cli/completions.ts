@@ -65,7 +65,6 @@ _dot() {
 		'--list-models[List available models]::search:'
 		'--verbose[Force verbose startup]'
 		'(--ui-mode)--ui-mode=[UI mode]:mode:(regular fullscreen)'
-		'--alt[Use fullscreen UI mode]'
 		'(--approve -a)'{-a,--approve}'[Trust project-local files for this run]'
 		'(--no-approve -na)'{-na,--no-approve}'[Ignore project-local files for this run]'
 		'--offline[Disable startup network operations]'

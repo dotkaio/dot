@@ -58,6 +58,42 @@ export interface Args {
 
 const VALID_THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
 
+const OPTIONS_WITH_VALUES = new Set([
+	"--provider",
+	"--model",
+	"--api-key",
+	"--system-prompt",
+	"--append-system-prompt",
+	"--mode",
+	"--name",
+	"--session",
+	"--session-id",
+	"--fork",
+	"--session-dir",
+	"--models",
+	"--tools",
+	"--exclude-tools",
+	"--thinking",
+	"--export",
+	"--extension",
+	"--skill",
+	"--prompt-template",
+	"--theme",
+	"--list-models",
+	"--ui-mode",
+]);
+
+const REQUIRED_VALUE_OPTIONS = new Set([...OPTIONS_WITH_VALUES].filter((option) => option !== "--list-models"));
+
+function normalizeEqualsSyntax(args: string[]): string[] {
+	return args.flatMap((arg) => {
+		if (!arg.startsWith("--")) return [arg];
+		const equalsIndex = arg.indexOf("=");
+		if (equalsIndex <= 2 || !OPTIONS_WITH_VALUES.has(arg.slice(0, equalsIndex))) return [arg];
+		return [arg.slice(0, equalsIndex), arg.slice(equalsIndex + 1)];
+	});
+}
+
 export function isValidThinkingLevel(level: string): level is ThinkingLevel {
 	return VALID_THINKING_LEVELS.includes(level as ThinkingLevel);
 }
@@ -70,8 +106,16 @@ export function parseArgs(args: string[]): Args {
 		diagnostics: [],
 	};
 
+	args = normalizeEqualsSyntax(args);
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i];
+
+		if (REQUIRED_VALUE_OPTIONS.has(arg) && (i + 1 >= args.length || args[i + 1].startsWith("-"))) {
+			if (arg !== "--name" && arg !== "--ui-mode") {
+				result.diagnostics.push({ type: "error", message: `${arg} requires a value` });
+				continue;
+			}
+		}
 
 		if (arg === "--help" || arg === "-h") {
 			result.help = true;

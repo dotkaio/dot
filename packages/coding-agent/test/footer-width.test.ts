@@ -84,6 +84,7 @@ function createFooterData(
 		getAiGatewayBalance: () => balance,
 		getCodexWeeklyRemainingPercent: () => codexWeeklyRemaining,
 		getProviderSpend: (providerId: string) => providerSpend[providerId] ?? 0,
+		getTotalSpend: () => Object.values(providerSpend).reduce((total, amount) => total + amount, 0),
 		addProviderSpend: (_providerId: string, _amount: number) => {},
 		getExtensionStatuses: () => new Map<string, string>(),
 		getAvailableProviderCount: () => providerCount,
@@ -172,11 +173,13 @@ describe("FooterComponent simplified row", () => {
 					cost: { total: 0 },
 				},
 			}),
-			createFooterData(1, 34.8855),
+			createFooterData(1, 34.8855, { "vercel-ai-gateway": 2.5, anthropic: 1.25 }),
+			undefined,
+			{ showSpend: true, showSessionCost: true, showProvider: true, showModel: true },
 		);
 
 		const line = stripAnsi(footer.render(80)[0]);
-		expect(line.startsWith(" $34.89 • 12% • $0.00")).toBe(true);
+		expect(line.startsWith(" $3.75 • 12% • $0.00")).toBe(true);
 		expect(line.trimEnd().endsWith("vercel • deepseek-v4-flash-0731 • off")).toBe(true);
 	});
 
@@ -206,11 +209,13 @@ describe("FooterComponent simplified row", () => {
 				modelId: "gpt-5.3-codex",
 				percent: 12.3,
 			}),
-			createFooterData(1, 34.8855, { "openai-codex": 12.345 }),
+			createFooterData(1, 34.8855, { "openai-codex": 12.345, anthropic: 7.655 }),
+			undefined,
+			{ showSpend: true, showCodexWeekly: true, showSessionCost: true, showProvider: true, showModel: true },
 		);
 
 		const line = stripAnsi(footer.render(80)[0]);
-		expect(line.startsWith(" $12.35 • 31% • 12% • $0.00")).toBe(true);
+		expect(line.startsWith(" $20.00 • 31% • 12% • $0.00")).toBe(true);
 		expect(line.trimEnd().endsWith("openai-codex • gpt-5.3-codex • off")).toBe(true);
 	});
 
@@ -218,6 +223,8 @@ describe("FooterComponent simplified row", () => {
 		const footer = new FooterComponent(
 			createSession({ sessionName: "", provider: "openai-codex", percent: 12.3 }),
 			createFooterData(1, null, {}, null),
+			undefined,
+			{ showSpend: true, showCodexWeekly: true, showSessionCost: true },
 		);
 		const line = stripAnsi(footer.render(80)[0]);
 		expect(line.startsWith(" $0.00 • 12% • $0.00")).toBe(true);
@@ -241,6 +248,8 @@ describe("FooterComponent simplified row", () => {
 				},
 			}),
 			createFooterData(1, 12.5),
+			undefined,
+			{ showSpend: true, showSessionCost: true, showProvider: true, showModel: true },
 		);
 
 		const line = stripAnsi(footer.render(100)[0]);
@@ -281,22 +290,42 @@ describe("FooterComponent simplified row", () => {
 		expect(line).toContain("?%");
 	});
 
-	it("shows $-- when remaining Vercel balance is unknown", () => {
+	it("uses cumulative spend even when the Vercel balance is unknown", () => {
 		const footer = new FooterComponent(
 			createSession({ sessionName: "", provider: "vercel-ai-gateway", percent: 10 }),
 			createFooterData(1, null),
 		);
 		const line = stripAnsi(footer.render(80)[0]);
-		expect(line.startsWith(" $-- • 10% • $0.00")).toBe(true);
+		expect(line).toContain("10%");
+		expect(line).not.toContain("$--");
 	});
 
-	it("shows $0.00 when a non-Vercel provider has no recorded spend yet", () => {
+	it("shows only context and thinking by default", () => {
+		const footer = new FooterComponent(
+			createSession({
+				sessionName: "",
+				provider: "anthropic",
+				modelId: "claude",
+				thinkingLevel: "high",
+				percent: 10,
+			}),
+			createFooterData(1, null, { anthropic: 99.99 }),
+		);
+		const line = stripAnsi(footer.render(80)[0]);
+		expect(line).toContain("10%");
+		expect(line.trimEnd().endsWith("high")).toBe(true);
+		expect(line).not.toContain("99.99");
+		expect(line).not.toContain("anthropic");
+		expect(line).not.toContain("claude");
+	});
+
+	it("shows context when a non-Vercel provider has no recorded spend yet", () => {
 		const footer = new FooterComponent(
 			createSession({ sessionName: "", provider: "anthropic", percent: 10 }),
 			createFooterData(1, null),
 		);
 		const line = stripAnsi(footer.render(80)[0]);
-		expect(line.startsWith(" $0.00 • 10% • $0.00")).toBe(true);
+		expect(line).toContain("10%");
 	});
 
 	it("appends session total cost after context for any provider", () => {
@@ -314,6 +343,8 @@ describe("FooterComponent simplified row", () => {
 				},
 			}),
 			createFooterData(1, null, { anthropic: 99.99 }),
+			undefined,
+			{ showSpend: true, showSessionCost: true },
 		);
 		const line = stripAnsi(footer.render(80)[0]);
 		expect(line.startsWith(" $99.99 • 22% • $3.46")).toBe(true);

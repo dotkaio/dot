@@ -62,6 +62,14 @@ export interface WarningSettings {
 	anthropicExtraUsage?: boolean; // default: true
 }
 
+export interface FooterSettings {
+	showSpend?: boolean; // default: false
+	showCodexWeekly?: boolean; // default: false
+	showSessionCost?: boolean; // default: false
+	showProvider?: boolean; // default: false
+	showModel?: boolean; // default: false
+}
+
 export type DefaultProjectTrust = "ask" | "always" | "never";
 
 export type TransportSetting = Transport;
@@ -125,6 +133,7 @@ export interface Settings {
 	showHardwareCursor?: boolean; // Show terminal cursor while still positioning it for IME
 	markdown?: MarkdownSettings;
 	warnings?: WarningSettings;
+	footer?: FooterSettings;
 	sessionDir?: string; // Custom session storage directory (same format as --session-dir CLI flag)
 	httpProxy?: string; // Proxy URL applied as HTTP_PROXY and HTTPS_PROXY for dot-managed HTTP clients
 	httpIdleTimeoutMs?: number; // HTTP header/body idle timeout in milliseconds; 0 disables it
@@ -854,6 +863,22 @@ export class SettingsManager {
 
 	getShowCacheMissNotices(): boolean {
 		return this.settings.showCacheMissNotices ?? false;
+	}
+
+	getFooterSettings(): Required<FooterSettings> {
+		return {
+			showSpend: this.settings.footer?.showSpend ?? false,
+			showCodexWeekly: this.settings.footer?.showCodexWeekly ?? false,
+			showSessionCost: this.settings.footer?.showSessionCost ?? false,
+			showProvider: this.settings.footer?.showProvider ?? false,
+			showModel: this.settings.footer?.showModel ?? false,
+		};
+	}
+
+	setFooterSettings(footer: Required<FooterSettings>): void {
+		this.globalSettings.footer = { ...footer };
+		this.markModified("footer");
+		this.save();
 	}
 
 	getExternalEditorCommand(): string {

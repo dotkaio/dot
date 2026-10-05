@@ -108,8 +108,9 @@ export type FooterDataProviderOptions = {
 };
 
 /**
- * Provides git branch, provider balance/spend, Codex weekly usage, and extension statuses - data not otherwise
- * accessible to extensions. Token stats and model info are available via ctx.sessionManager and ctx.model.
+ * Provides git branch, cumulative provider spend, provider balance, Codex weekly usage, and extension statuses -
+ * data not otherwise accessible to extensions. Token stats and model info are available via ctx.sessionManager and
+ * ctx.model.
  */
 export class FooterDataProvider {
 	private cwd: string;
@@ -197,13 +198,18 @@ export class FooterDataProvider {
 		return this.cachedCodexWeeklyRemainingPercent ?? null;
 	}
 
-	/** Lifetime USD spent on a non-Vercel provider since first tracked use. Never resets. */
+	/** Lifetime USD spent on a provider since first tracked use. Never resets. */
 	getProviderSpend(provider: string): number {
 		return this.providerSpendStore.getTotal(provider);
 	}
 
+	/** Lifetime USD spend across every tracked provider since first tracked use. Never resets. */
+	getTotalSpend(): number {
+		return this.providerSpendStore.getTotalSpend();
+	}
+
 	/**
-	 * Permanently add spend for a non-Vercel provider and notify footer listeners.
+	 * Permanently add spend for a provider and notify footer listeners.
 	 * Totals only increase and survive restarts.
 	 */
 	addProviderSpend(provider: string, amount: number): void {
@@ -623,6 +629,7 @@ export type ReadonlyFooterDataProvider = Pick<
 	| "getAiGatewayBalance"
 	| "getCodexWeeklyRemainingPercent"
 	| "getProviderSpend"
+	| "getTotalSpend"
 	| "addProviderSpend"
 	| "getExtensionStatuses"
 	| "getAvailableProviderCount"

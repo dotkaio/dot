@@ -1,6 +1,6 @@
 /**
  * Persistent lifetime spend totals per provider.
- * Used by the TUI footer for non-Vercel harnesses (remaining balance is Vercel-only).
+ * Used by the TUI footer for cumulative spend across all harnesses.
  */
 
 import { join } from "node:path";
@@ -43,6 +43,8 @@ function parseSpend(content: string | undefined): ProviderSpendData {
 export interface ProviderSpendStore {
 	/** Lifetime total USD spent for a provider (0 if never tracked). */
 	getTotal(provider: string): number;
+	/** Lifetime total USD spent across all tracked providers. */
+	getTotalSpend(): number;
 	/**
 	 * Add a positive spend amount for a provider and persist.
 	 * Returns the new total. No-ops for invalid inputs.
@@ -69,6 +71,13 @@ export class FileProviderSpendStore implements ProviderSpendStore {
 			this.cache = this.readAll();
 		}
 		return this.cache[provider] ?? 0;
+	}
+
+	getTotalSpend(): number {
+		if (!this.cache) {
+			this.cache = this.readAll();
+		}
+		return Object.values(this.cache).reduce((total, amount) => total + amount, 0);
 	}
 
 	addSpend(provider: string, amount: number): number {

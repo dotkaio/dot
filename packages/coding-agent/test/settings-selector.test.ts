@@ -55,6 +55,13 @@ describe("SettingsSelectorComponent", () => {
 				terminalTheme: "dark",
 				hideThinkingBlock: false,
 				showCacheMissNotices: false,
+				footer: {
+					showSpend: false,
+					showCodexWeekly: false,
+					showSessionCost: false,
+					showProvider: false,
+					showModel: false,
+				},
 				collapseChangelog: false,
 				enableProviderAttribution: false,
 				doubleEscapeAction: "tree",
@@ -78,6 +85,7 @@ describe("SettingsSelectorComponent", () => {
 
 		const output = stripAnsi(selector.render(120).join("\n"));
 		expect(output).toContain("Terminal progress");
+		expect(output).toContain("Footer display");
 		expect(output).not.toContain("(1/");
 	});
 });

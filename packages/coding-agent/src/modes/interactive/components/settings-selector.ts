@@ -15,7 +15,7 @@ import {
 	Text,
 } from "@dotkaio/dot-tui";
 import { formatHttpIdleTimeoutMs, HTTP_IDLE_TIMEOUT_CHOICES } from "../../../core/http-dispatcher.ts";
-import type { DefaultProjectTrust, UiMode, WarningSettings } from "../../../core/settings-manager.ts";
+import type { DefaultProjectTrust, FooterSettings, UiMode, WarningSettings } from "../../../core/settings-manager.ts";
 import {
 	getSelectListTheme,
 	getSettingsListTheme,
@@ -82,6 +82,7 @@ export interface SettingsConfig {
 	availableThemes: string[];
 	hideThinkingBlock: boolean;
 	showCacheMissNotices: boolean;
+	footer: Required<FooterSettings>;
 	collapseChangelog: boolean;
 	enableProviderAttribution: boolean;
 	doubleEscapeAction: "fork" | "tree" | "none";
@@ -116,6 +117,7 @@ export interface SettingsCallbacks {
 	onThemePreview?: (theme: string) => void;
 	onHideThinkingBlockChange: (hidden: boolean) => void;
 	onShowCacheMissNoticesChange: (shown: boolean) => void;
+	onFooterChange: (footer: Required<FooterSettings>) => void;
 	onCollapseChangelogChange: (collapsed: boolean) => void;
 	onEnableProviderAttributionChange: (enabled: boolean) => void;
 	onDoubleEscapeActionChange: (action: "fork" | "tree" | "none") => void;
@@ -172,6 +174,97 @@ class WarningSettingsSubmenu extends Container {
 						onChange({ ...this.state });
 						break;
 				}
+			},
+			onCancel,
+		);
+
+		this.addChild(this.settingsList);
+	}
+
+	handleMouseWheel(direction: MouseWheelDirection, lines: number): boolean {
+		return this.settingsList.handleMouseWheel(direction, lines);
+	}
+
+	handleInput(data: string): void {
+		this.settingsList.handleInput(data);
+	}
+}
+
+class FooterSettingsSubmenu extends Container {
+	private settingsList: SettingsList;
+	private state: Required<FooterSettings>;
+
+	constructor(
+		footer: Required<FooterSettings>,
+		onChange: (footer: Required<FooterSettings>) => void,
+		onCancel: () => void,
+		maxVisible: number,
+	) {
+		super();
+		this.state = { ...footer };
+
+		const items: SettingItem[] = [
+			{
+				id: "spend",
+				label: "Lifetime spend",
+				description: "Show cumulative tracked spend across all AI providers",
+				currentValue: this.state.showSpend ? "true" : "false",
+				values: ["true", "false"],
+			},
+			{
+				id: "codex-weekly",
+				label: "Codex weekly remaining",
+				description: "Show remaining Codex weekly usage when using Codex",
+				currentValue: this.state.showCodexWeekly ? "true" : "false",
+				values: ["true", "false"],
+			},
+			{
+				id: "session-cost",
+				label: "Session cost",
+				description: "Show the current session cost",
+				currentValue: this.state.showSessionCost ? "true" : "false",
+				values: ["true", "false"],
+			},
+			{
+				id: "provider",
+				label: "Provider",
+				description: "Show the active provider name",
+				currentValue: this.state.showProvider ? "true" : "false",
+				values: ["true", "false"],
+			},
+			{
+				id: "model",
+				label: "Model",
+				description: "Show the active model name",
+				currentValue: this.state.showModel ? "true" : "false",
+				values: ["true", "false"],
+			},
+		];
+
+		this.settingsList = new SettingsList(
+			items,
+			Math.min(items.length, maxVisible),
+			getSettingsListTheme(),
+			(id, newValue) => {
+				const enabled = newValue === "true";
+				switch (id) {
+					case "spend":
+						this.state.showSpend = enabled;
+						break;
+					case "codex-weekly":
+						this.state.showCodexWeekly = enabled;
+						break;
+					case "session-cost":
+						this.state.showSessionCost = enabled;
+						break;
+					case "provider":
+						this.state.showProvider = enabled;
+						break;
+					case "model":
+						this.state.showModel = enabled;
+						break;
+				}
+				onChange({ ...this.state });
 			},
 			onCancel,
 		);
@@ -522,6 +615,7 @@ export class SettingsSelectorComponent extends Container {
 		const supportsImages = getCapabilities().images;
 		const followUpKey = keyDisplayText("app.message.followUp");
 		let currentWarnings = { ...config.warnings };
+		let currentFooter = { ...config.footer };
 
 		const items: SettingItem[] = [
 			{
@@ -595,6 +689,23 @@ export class SettingsSelectorComponent extends Container {
 				description: "Identify Dot in supported provider requests",
 				currentValue: config.enableProviderAttribution ? "true" : "false",
 				values: ["true", "false"],
+			},
+			{
+				id: "footer",
+				label: "Footer display",
+				description:
+					"Choose which optional values appear in the footer; context and thinking always remain visible",
+				currentValue: "configure",
+				submenu: (_currentValue, done) =>
+					new FooterSettingsSubmenu(
+						currentFooter,
+						(footer) => {
+							currentFooter = footer;
+							callbacks.onFooterChange(footer);
+						},
+						() => done(),
+						maxVisible,
+					),
 			},
 			{
 				id: "default-project-trust",

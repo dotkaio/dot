@@ -53,6 +53,7 @@ describe("completion command", () => {
 			]) {
 				expect(script).toContain(option);
 			}
+			expect(script).not.toContain("--alt");
 		});
 	});
 

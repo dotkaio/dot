@@ -347,6 +347,12 @@ describe("parseArgs", () => {
 			expect(result.diagnostics).toEqual([{ type: "error", message: "--ui-mode requires regular or fullscreen" }]);
 		});
 
+		test("accepts equals syntax", () => {
+			const result = parseArgs(["--ui-mode=regular"]);
+			expect(result.uiMode).toBe("regular");
+			expect(result.unknownFlags.size).toBe(0);
+		});
+
 		test("accepts --alt as a hidden fullscreen shortcut", () => {
 			const result = parseArgs(["--alt"]);
 			expect(result.uiMode).toBe("fullscreen");
@@ -378,6 +384,16 @@ describe("parseArgs", () => {
 		test("parses --tools flag", () => {
 			const result = parseArgs(["--tools", "read,bash"]);
 			expect(result.tools).toEqual(["read", "bash"]);
+		});
+
+		test("parses --tools with equals syntax", () => {
+			const result = parseArgs(["--tools=read,bash"]);
+			expect(result.tools).toEqual(["read", "bash"]);
+		});
+
+		test("requires a value for --tools", () => {
+			const result = parseArgs(["--tools"]);
+			expect(result.diagnostics).toEqual([{ type: "error", message: "--tools requires a value" }]);
 		});
 
 		test("parses -t shorthand", () => {

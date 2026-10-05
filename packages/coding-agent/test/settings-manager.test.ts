@@ -455,6 +455,43 @@ describe("SettingsManager", () => {
 		});
 	});
 
+	describe("footer settings", () => {
+		it("defaults optional footer values off and persists changes", async () => {
+			const manager = SettingsManager.create(projectDir, agentDir);
+			expect(manager.getFooterSettings()).toEqual({
+				showSpend: false,
+				showCodexWeekly: false,
+				showSessionCost: false,
+				showProvider: false,
+				showModel: false,
+			});
+
+			manager.setFooterSettings({
+				showSpend: true,
+				showCodexWeekly: false,
+				showSessionCost: true,
+				showProvider: true,
+				showModel: false,
+			});
+			await manager.flush();
+
+			expect(manager.getFooterSettings()).toEqual({
+				showSpend: true,
+				showCodexWeekly: false,
+				showSessionCost: true,
+				showProvider: true,
+				showModel: false,
+			});
+			expect(JSON.parse(readFileSync(join(agentDir, "settings.json"), "utf-8")).footer).toEqual({
+				showSpend: true,
+				showCodexWeekly: false,
+				showSessionCost: true,
+				showProvider: true,
+				showModel: false,
+			});
+		});
+	});
+
 	describe("shellCommandPrefix", () => {
 		it("should load shellCommandPrefix from settings", () => {
 			const settingsPath = join(agentDir, "settings.json");

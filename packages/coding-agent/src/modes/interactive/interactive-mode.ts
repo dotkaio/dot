@@ -527,7 +527,12 @@ export class InteractiveMode {
 		this.editorContainer = new Container();
 		this.editorContainer.addChild(this.editor as Component);
 		this.footerDataProvider = new FooterDataProvider(this.sessionManager.getCwd());
-		this.footer = new FooterComponent(this.session, this.footerDataProvider, this.runtimePolicy?.footerLabel);
+		this.footer = new FooterComponent(
+			this.session,
+			this.footerDataProvider,
+			this.runtimePolicy?.footerLabel,
+			this.settingsManager.getFooterSettings(),
+		);
 		this.footer.setAutoCompactEnabled(this.session.autoCompactionEnabled);
 		this.footerContainer = new Container();
 		this.footerContainer.addChild(this.footer);
@@ -1766,6 +1771,7 @@ export class InteractiveMode {
 		configureHttpDispatcher(this.settingsManager.getHttpIdleTimeoutMs());
 		this.applyFullscreenScrollbarSetting();
 		this.footer.setSession(this.session);
+		this.footer.setFooterSettings(this.settingsManager.getFooterSettings());
 		this.footer.setAutoCompactEnabled(this.session.autoCompactionEnabled);
 		this.footerDataProvider.setCwd(this.sessionManager.getCwd());
 		this.hideThinkingBlock = this.settingsManager.getHideThinkingBlock();
@@ -3052,15 +3058,14 @@ export class InteractiveMode {
 			case "message_end":
 				if (event.message.role === "user") break;
 				if (event.message.role === "assistant") {
-					// Vercel: deduct remaining balance optimistically, then re-sync credits API.
-					// Other harnesses: permanently accumulate lifetime spend for the provider.
+					// Accumulate lifetime spend for every provider. Vercel also updates its
+					// remaining balance optimistically, then re-syncs the credits API.
 					const spent = event.message.usage?.cost?.total ?? 0;
-					if (spent > 0) {
+					if (spent > 0 && event.message.provider) {
+						this.footerDataProvider.addProviderSpend(event.message.provider, spent);
 						if (isVercelAiGatewayProvider(event.message.provider)) {
 							this.footerDataProvider.applyLocalSpend(spent);
 							this.footerDataProvider.scheduleBalanceResyncAfterSpend();
-						} else if (event.message.provider) {
-							this.footerDataProvider.addProviderSpend(event.message.provider, spent);
 						}
 					}
 				}
@@ -4302,6 +4307,7 @@ export class InteractiveMode {
 					treeFilterMode: this.settingsManager.getTreeFilterMode(),
 					showHardwareCursor: this.settingsManager.getShowHardwareCursor(),
 					showCacheMissNotices: this.settingsManager.getShowCacheMissNotices(),
+					footer: this.settingsManager.getFooterSettings(),
 					defaultProjectTrust: this.settingsManager.getDefaultProjectTrust(),
 					editorPaddingX: this.settingsManager.getEditorPaddingX(),
 					outputPad: this.settingsManager.getOutputPad(),
@@ -4384,6 +4390,11 @@ export class InteractiveMode {
 					onShowCacheMissNoticesChange: (shown) => {
 						this.settingsManager.setShowCacheMissNotices(shown);
 						this.rebuildChatFromMessages();
+					},
+					onFooterChange: (footer) => {
+						this.settingsManager.setFooterSettings(footer);
+						this.footer.setFooterSettings(footer);
+						this.ui.requestRender();
 					},
 					onCollapseChangelogChange: (collapsed) => {
 						this.settingsManager.setCollapseChangelog(collapsed);

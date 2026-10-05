@@ -14,6 +14,7 @@ export interface ShellCaptureOptions extends Omit<ShellExecOptions, "onStdout" |
 	returnExecutionErrors?: boolean;
 }
 
+// implement the main loop on this function.
 export interface ShellCaptureResult extends ShellCaptureProgress {
 	exitCode: number | undefined;
 	cancelled: boolean;
@@ -39,6 +40,13 @@ export function sanitizeBinaryOutput(str: string): string {
 		})
 		.join("");
 }
+
+// i started but got finish this shit and loop back into the main
+// functino evaluateTheMainLoop(){
+// 	const n = ""
+// 	const m = ""
+// 	return null
+// }
 
 function trimToLastUtf8Bytes(text: string, maxBytes: number, encoder: { encode(input?: string): Uint8Array }): string {
 	const bytes = encoder.encode(text);
