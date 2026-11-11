@@ -1,7 +1,13 @@
 import type { Api, Model } from "@dotkaio/dot-ai/compat";
 import { setKeybindings, type TUI } from "@dotkaio/dot-tui";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { KeybindingsManager } from "../../src/core/keybindings.ts";
+import * as modelPickerMetadata from "../../src/core/model-picker-metadata.ts";
+import {
+	getModelMetadataCost,
+	MODEL_METADATA_RETRY_INTERVAL_MS,
+	VERCEL_MODEL_METADATA_CACHE_TTL_MS,
+} from "../../src/core/model-picker-metadata.ts";
 import {
 	ARTIFICIAL_ANALYSIS_CACHE_TTL_MS,
 	decryptArtificialAnalysisPayload,
@@ -210,6 +216,7 @@ describe("model selector sorting", () => {
 		while (harnesses.length > 0) {
 			harnesses.pop()?.cleanup();
 		}
+		vi.restoreAllMocks();
 	});
 
 	it("sorts every /model column in both directions", async () => {
@@ -270,117 +277,122 @@ describe("model selector sorting", () => {
 		expect(await decryptArtificialAnalysisPayload(encrypted, keyHex)).toEqual(payload);
 	});
 
-	it("uses only the Intelligence Index and keeps provider routes consistent", () => {
+	it("uses only published Intelligence Index scores across provider routes", () => {
 		const scores = parseArtificialAnalysisScores(
-			String.raw`<script>self.__next_f.push([1,"{\"initialData\":[{\"id\":\"gpt-5-6-sol-high-uuid\",\"slug\":\"gpt-5-6-sol-high\",\"name\":\"GPT-5.6 Sol (high)\",\"shortName\":\"GPT-5.6 Sol\",\"releaseDate\":\"2026-07-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":56.4,\"codingIndex\":71.2},{\"id\":\"gpt-5-6-sol-max-uuid\",\"slug\":\"gpt-5-6-sol-max\",\"name\":\"GPT-5.6 Sol (max)\",\"shortName\":\"GPT-5.6 Sol\",\"releaseDate\":\"2026-07-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":59.2,\"codingIndex\":77.4},{\"id\":\"claude-4-5-haiku-uuid\",\"slug\":\"claude-4-5-haiku\",\"name\":\"Claude Haiku 4.5\",\"shortName\":\"Claude Haiku 4.5\",\"releaseDate\":\"2025-10-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":29.5,\"codingIndex\":41.5},{\"id\":\"o3-uuid\",\"slug\":\"o3\",\"name\":\"o3\",\"shortName\":\"o3\",\"releaseDate\":\"2025-04-16\",\"isReasoning\":true,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":30.4,\"codingIndex\":48.1},{\"id\":\"grok-4-5-high-uuid\",\"slug\":\"grok-4-5-high\",\"name\":\"Grok 4.5 (high)\",\"shortName\":\"Grok 4.5\",\"releaseDate\":\"2026-07-08\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":60.1,\"codingIndex\":72.4},{\"id\":\"old-model-uuid\",\"slug\":\"old-model\",\"name\":\"Old model\",\"shortName\":\"Old model\",\"releaseDate\":\"2020-01-01\",\"isReasoning\":false,\"deprecated\":true,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":99,\"codingIndex\":99},{\"id\":\"unranked-uuid\",\"slug\":\"unranked\",\"name\":\"Unranked\",\"shortName\":\"Unranked\",\"releaseDate\":\"2020-01-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":40,\"codingIndex\":null}]}"])</script>` +
-				String.raw`<script>self.__next_f.push([1,"{\"data\":[{\"label\":\"Codex - GPT-5.6 Sol (max)\",\"codingAgentsIndex\":0.8002},{\"label\":\"Claude Code - Opus 4.8 (max)\",\"codingAgentsIndex\":0.7254},{\"label\":\"Grok Build - Grok 4.5 (high)\",\"codingAgentsIndex\":0.578}]}"])</script>` +
-				String.raw`<script>self.__next_f.push([1,"{\"rows\":[{\"id\":\"abc123def456\",\"agentName\":\"Claude Code\",\"provider\":\"anthropic\",\"hostModelSlug\":\"anthropic_claude-opus-4-8\",\"display\":{\"agent\":\"Claude Code\",\"model\":\"Opus 4.8 (max)\",\"creator\":{\"agent\":\"Anthropic\",\"model\":\"Anthropic\"}},\"displayLabel\":\"Claude Code - Opus 4.8 (max)\",\"indexScore\":0.7254},{\"id\":\"grokbuild123\",\"agentName\":\"Grok Build\",\"provider\":\"xai\",\"hostModelSlug\":\"xai_grok-4-5\",\"display\":{\"agent\":\"Grok Build\",\"model\":\"Grok 4.5 (high)\",\"creator\":{\"agent\":\"xAI\",\"model\":\"xAI\"}},\"displayLabel\":\"Grok Build - Grok 4.5 (high)\",\"indexScore\":0.578}]}"])</script>`,
+			`<script type="application/ld+json">${JSON.stringify({
+				models: [
+					{
+						slug: "gpt-5-6-sol-high",
+						name: "GPT-5.6 Sol (High)",
+						shortName: "GPT-5.6 Sol",
+						intelligenceIndex: 56.4,
+					},
+					{
+						slug: "gpt-5-6-sol-max",
+						name: "GPT-5.6 Sol (Max)",
+						shortName: "GPT-5.6 Sol",
+						intelligenceIndex: 59.2,
+					},
+					{ slug: "claude-4-5-haiku", name: "Claude Haiku 4.5", intelligenceIndex: 29.5 },
+					{ slug: "grok-4-5-high", name: "Grok 4.5 (High)", intelligenceIndex: 60.1 },
+					{ slug: "gemma-4-31b", name: "Gemma 4 31B (Reasoning)", intelligenceIndex: 30.1 },
+					{ slug: "llama-3-3-instruct-70b", intelligenceIndex: 25.4 },
+					{ slug: "qwen3-32b", intelligenceIndex: 35.5 },
+					{ slug: "nova-2-0-lite", intelligenceIndex: 20.1 },
+					{ slug: "old-model", deprecated: true, intelligenceIndex: 12.3 },
+					{ slug: "unranked", intelligenceIndex: null, codingIndex: 99 },
+					{ label: "Codex - Unranked", codingAgentsIndex: 0.99 },
+					{ slug: "o3", intelligenceIndex: 30.4 },
+				],
+			})}</script>`,
 		);
-
 		expect(scores.exact.get("gpt-5-6-sol-high")).toBe(56.4);
-		expect(scores.exact.get("gpt-5-6-sol-max")).toBe(59.2);
 		expect(scores.canonical.get("gpt-5-6-sol")).toBe(59.2);
-		expect(scores.exact.get("old-model")).toBe(99);
-		expect(scores.exact.get("unranked")).toBe(40);
-		expect(scores.exact.has("claude-opus-4-8")).toBe(false);
-		expect(scores.exact.has("xai-grok-4-5")).toBe(false);
+		expect(scores.exact.get("old-model")).toBe(12.3);
+		expect(scores.exact.has("unranked")).toBe(false);
 
-		for (const item of [
-			{ provider: "xai", id: "grok-4.5", name: "Grok 4.5" },
-			{ provider: "vercel-ai-gateway", id: "xai/grok-4.5", name: "Grok 4.5" },
-			{ provider: "openrouter", id: "x-ai/grok-4.5", name: "xAI: Grok 4.5" },
-		]) {
-			expect(resolveArtificialAnalysisIqForTest(item, scores)).toBe(60.1);
-		}
-
-		// Haiku id order differs between providers and AA.
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "anthropic", id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
-				scores,
-			),
-		).toBe(29.5);
-		// Bedrock regional ids should still resolve.
-		expect(
-			resolveArtificialAnalysisIqForTest(
+		for (const [item, expected] of [
+			[{ provider: "xai", id: "grok-4.5", name: "Grok 4.5" }, 60.1],
+			[{ provider: "vercel-ai-gateway", id: "xai/grok-4.5", name: "Grok 4.5" }, 60.1],
+			[{ provider: "openrouter", id: "x-ai/grok-4.5", name: "xAI: Grok 4.5" }, 60.1],
+			[{ provider: "openai-codex", id: "gpt-5.6-sol", name: "GPT-5.6 Sol" }, 59.2],
+			[{ provider: "vercel-ai-gateway", id: "openai/gpt-5.6-sol-fast", name: "GPT-5.6 Sol (Fast)" }, 59.2],
+			[{ provider: "vercel-ai-gateway", id: "openai/gpt-5.6-sol-batch", name: "GPT-5.6 Sol (Batch)" }, 59.2],
+			[
 				{
 					provider: "amazon-bedrock",
 					id: "eu.anthropic.claude-haiku-4-5-20251001-v1:0",
 					name: "Claude Haiku 4.5 (EU)",
 				},
-				scores,
-			),
-		).toBe(29.5);
-		// Product-tier suffixes fall back when AA only ranks the base model.
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "vercel-ai-gateway", id: "openai/o3-pro", name: "o3 Pro" },
-				scores,
-			),
-		).toBe(30.4);
+				29.5,
+			],
+			[{ provider: "openrouter", id: "google/gemma-4-31b-it:free", name: "Gemma 4 31B IT" }, 30.1],
+			[{ provider: "groq", id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B" }, 25.4],
+			[{ provider: "vercel-ai-gateway", id: "alibaba/qwen-3-32b", name: "Qwen 3 32B" }, 35.5],
+			[{ provider: "amazon-bedrock", id: "amazon.nova-2-lite-v1:0", name: "Nova 2 Lite" }, 20.1],
+		] as const) {
+			expect(resolveArtificialAnalysisIqForTest(item, scores), item.id).toBe(expected);
+		}
+		for (const id of ["claude-opus-4-5", "claude-haiku-3-5", "nova-lite", "o3-pro", "grok-4.5-fast", "gemma-4-26b"]) {
+			expect(resolveArtificialAnalysisIqForTest({ provider: "test", id }, scores), id).toBeUndefined();
+		}
+	});
 
-		const routeVariantScores = parseArtificialAnalysisScores(
+	it("parses split streamed records without dropping historical models or manifests", () => {
+		const manifest = { path: "/data/models.txt", key: "01".repeat(32) };
+		const flight = `1f:${JSON.stringify([
+			"$",
+			"div",
+			null,
+			{
+				manifest,
+				models: [{ slug: "gemini-2-5-pro", deprecated: true, intelligenceIndex: 26.4 }],
+			},
+		])}\n`;
+		const chunks = [flight.slice(0, 40), flight.slice(40, 125), flight.slice(125)];
+		const html = chunks.map((chunk) => `<script>self.__next_f.push([1,${JSON.stringify(chunk)}])</script>`).join("");
+		expect(parseArtificialAnalysisScores(html).exact.get("gemini-2-5-pro")).toBe(26.4);
+		expect(parseArtificialAnalysisDataManifests(html)).toEqual([manifest]);
+	});
+
+	it("keeps all published scores and rejects absent or invalid values", () => {
+		const rows = Array.from({ length: 200 }, (_, index) => ({
+			slug: `model-${index}`,
+			intelligenceIndex: index / 2,
+		}));
+		const scores = parseArtificialAnalysisScores(
 			`<script type="application/ld+json">${JSON.stringify({
-				data: [
-					{ slug: "qwen3-32b", intelligenceIndex: 35.5 },
-					{ slug: "minimax-m2-5", intelligenceIndex: 40.5 },
+				rows: [
+					...rows,
+					...[null, "", " ", -1, 101, "NaN", false].map((intelligenceIndex, index) => ({
+						slug: `invalid-${index}`,
+						intelligenceIndex,
+					})),
 				],
 			})}</script>`,
 		);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "vercel-ai-gateway", id: "alibaba/qwen-3-32b", name: "Qwen 3 32B" },
-				routeVariantScores,
-			),
-		).toBe(35.5);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "vercel-ai-gateway", id: "minimax/minimax-m2.5-highspeed", name: "MiniMax M2.5 High Speed" },
-				routeVariantScores,
-			),
-		).toBe(40.5);
+		expect(scores.canonical.size).toBe(200);
+		for (let index = 0; index < 200; index++) {
+			expect(resolveArtificialAnalysisIqForTest({ provider: "gateway", id: `vendor/model-${index}` }, scores)).toBe(
+				index / 2,
+			);
+		}
+	});
 
-		// Identity orthography: free-tier packaging, instruct -it tags, zero-padded versions, MoE size tags.
-		const identityScores = parseArtificialAnalysisScores(
-			String.raw`<script>self.__next_f.push([1,"{\"initialData\":[{\"id\":\"gemma-4-31b-uuid\",\"slug\":\"gemma-4-31b\",\"name\":\"Gemma 4 31B\",\"shortName\":\"Gemma 4 31B\",\"releaseDate\":\"2026-04-02\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":true,\"sizeClass\":\"medium\",\"intelligenceIndex\":30.1,\"codingIndex\":43.4},{\"id\":\"nova-2-0-lite-uuid\",\"slug\":\"nova-2-0-lite\",\"name\":\"Nova 2 Lite\",\"shortName\":\"Nova 2 Lite\",\"releaseDate\":\"2026-01-01\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"small\",\"intelligenceIndex\":20.1,\"codingIndex\":23.0},{\"id\":\"llama-4-scout-uuid\",\"slug\":\"llama-4-scout\",\"name\":\"Llama 4 Scout\",\"shortName\":\"Llama 4 Scout\",\"releaseDate\":\"2025-04-05\",\"isReasoning\":false,\"deprecated\":false,\"isOpenWeights\":true,\"sizeClass\":\"small\",\"intelligenceIndex\":10.0,\"codingIndex\":8.2},{\"id\":\"claude-opus-4-8-uuid\",\"slug\":\"claude-opus-4-8\",\"name\":\"Claude Opus 4.8\",\"shortName\":\"Claude Opus 4.8\",\"releaseDate\":\"2026-01-01\",\"isReasoning\":true,\"deprecated\":false,\"isOpenWeights\":false,\"sizeClass\":\"large\",\"intelligenceIndex\":50.0,\"codingIndex\":72.0}]}"])</script>`,
+	it("uses fresh gateway pricing without applying it to direct providers", () => {
+		const catalogCost = { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 };
+		const gatewayCost = { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 };
+		const vercelCosts = new Map([["anthropic/claude-opus-5-5", gatewayCost]]);
+		const model = { name: "Claude Opus 5.5", cost: catalogCost };
+
+		expect(
+			getModelMetadataCost({ provider: "vercel-ai-gateway", id: "anthropic/claude-opus-5.5", model }, vercelCosts),
+		).toEqual(gatewayCost);
+		expect(getModelMetadataCost({ provider: "anthropic", id: "claude-opus-5-5", model }, vercelCosts)).toEqual(
+			catalogCost,
 		);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "openrouter", id: "google/gemma-4-31b-it:free", name: "Gemma 4 31B IT" },
-				identityScores,
-			),
-		).toBe(30.1);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "huggingface", id: "google/gemma-4-31b-it", name: "Gemma 4 31B IT" },
-				identityScores,
-			),
-		).toBe(30.1);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "amazon-bedrock", id: "amazon.nova-2-lite-v1:0", name: "Nova 2 Lite" },
-				identityScores,
-			),
-		).toBe(20.1);
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "groq", id: "meta-llama/llama-4-scout-17b-16e", name: "Llama 4 Scout 17B 16E" },
-				identityScores,
-			),
-		).toBe(10.0);
-		// Different versions / generations must not match.
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "anthropic", id: "claude-opus-4-5", name: "Claude Opus 4.5" },
-				identityScores,
-			),
-		).toBeUndefined();
-		expect(
-			resolveArtificialAnalysisIqForTest(
-				{ provider: "amazon-bedrock", id: "amazon.nova-lite-v1:0", name: "Nova Lite" },
-				identityScores,
-			),
-		).toBeUndefined();
+		expect(VERCEL_MODEL_METADATA_CACHE_TTL_MS).toBe(60 * 60 * 1000);
+		expect(MODEL_METADATA_RETRY_INTERVAL_MS).toBe(15 * 60 * 1000);
 	});
 
 	it("renders a visible selected row marker", async () => {
@@ -392,8 +404,42 @@ describe("model selector sorting", () => {
 
 		const output = stripAnsi(selector.render(140).join("\n"));
 		// Selected row is highlighted; current model may also show a check marker depending on theme/version.
+		expect(output).toContain("IQ");
+		expect(output).not.toContain("Agent");
 		expect(output).toContain("Alpha");
 		expect(output).toMatch(/Alpha\s+300/u);
+	});
+
+	it("renders cached IQ immediately and labels historical and unrated models", async () => {
+		const harness = await createSortHarness();
+		harnesses.push(harness);
+		vi.spyOn(modelPickerMetadata, "getCachedModelPickerMetadata").mockReturnValue({
+			artificialAnalysisScores: { exact: new Map([["alpha", 30]]), canonical: new Map() },
+			historicalArtificialAnalysisScores: {
+				exact: new Map([
+					["alpha", 90],
+					["bravo", 20],
+				]),
+				canonical: new Map(),
+			},
+			vercelReleaseDates: new Map(),
+			vercelCosts: new Map(),
+		});
+		const selector = createSelector(harness);
+		const lines = stripAnsi(selector.render(140).join("\n")).split("\n");
+		expect(lines.find((line) => line.includes("Alpha"))).toMatch(/faux\s+30\s+-/u);
+		expect(lines.find((line) => line.includes("Bravo"))).toMatch(/faux\s+20\*\s+-/u);
+		expect(lines.find((line) => line.includes("Charlie"))).toMatch(/faux\s+N\/A\s+-/u);
+		expect(lines.join("\n")).toContain("different scale");
+		for (const direction of ["descending", "ascending"]) {
+			selector.handleInput("Q");
+			const sorted = stripAnsi(selector.render(140).join("\n"));
+			const first = direction === "descending" ? "Alpha" : "Bravo";
+			const second = direction === "descending" ? "Bravo" : "Alpha";
+			expect(sorted.indexOf(first)).toBeLessThan(sorted.indexOf(second));
+			expect(sorted.indexOf(second)).toBeLessThan(sorted.indexOf("Charlie"));
+		}
+		selector.handleInput("\x1b");
 	});
 
 	it("resets selection to the first row after query and sort changes", async () => {

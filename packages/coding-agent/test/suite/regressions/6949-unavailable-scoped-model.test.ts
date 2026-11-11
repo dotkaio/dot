@@ -30,6 +30,7 @@ function createInteractiveContext(options: {
 			setEnabledModels: vi.fn(),
 		},
 		showStatus: vi.fn(),
+		getSelectorMaxVisible: vi.fn(() => 8),
 		showSelector: (factory: (done: () => void) => { component: ScopedModelsSelectorComponent }) => {
 			selector = factory(() => {}).component;
 		},

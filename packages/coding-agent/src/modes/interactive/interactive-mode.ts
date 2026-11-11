@@ -81,6 +81,7 @@ import { FooterDataProvider, type ReadonlyFooterDataProvider } from "../../core/
 import { configureHttpDispatcher, formatHttpIdleTimeoutMs } from "../../core/http-dispatcher.ts";
 import { type AppKeybinding, KeybindingsManager } from "../../core/keybindings.ts";
 import { createCompactionSummaryMessage } from "../../core/messages.ts";
+import { warmModelPickerMetadata } from "../../core/model-picker-metadata.ts";
 import {
 	defaultModelPerProvider,
 	findExactModelReferenceMatch,
@@ -898,6 +899,7 @@ export class InteractiveMode {
 	async run(): Promise<void> {
 		await this.init();
 
+		warmModelPickerMetadata();
 		if (!process.env.DOT_OFFLINE) {
 			void this.session.modelRuntime
 				.refresh()
