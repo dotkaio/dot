@@ -383,8 +383,8 @@ describe("parseCommandArgs", () => {
 	});
 
 	test("should handle quoted empty string", () => {
-		// Note: Empty quotes are skipped by current implementation
-		expect(parseCommandArgs('"" " "')).toEqual([" "]);
+		// Quoted empty strings are kept as empty arguments, like in bash
+		expect(parseCommandArgs('"" " "')).toEqual(["", " "]);
 	});
 
 	test("should handle arguments with special characters", () => {
@@ -415,8 +415,17 @@ describe("parseCommandArgs", () => {
 	});
 
 	test("should handle escaped quotes inside quoted strings", () => {
-		// Note: This implementation doesn't handle escaped quotes - backslash is literal
-		expect(parseCommandArgs('"quoted \\"text\\""')).toEqual(["quoted \\text\\"]);
+		// A backslash before the open quote's character gives a literal quote
+		expect(parseCommandArgs('"quoted \\"text\\""')).toEqual(['quoted "text"']);
+	});
+
+	test("should keep apostrophes inside words literal", () => {
+		// An apostrophe inside a word does not open a quote, as in bash
+		expect(parseCommandArgs("doesn't stop me now")).toEqual(["doesn't", "stop", "me", "now"]);
+	});
+
+	test("should keep an unclosed quote as literal text", () => {
+		expect(parseCommandArgs("it's a 'test")).toEqual(["it's", "a", "'test"]);
 	});
 
 	test("should handle trailing spaces", () => {

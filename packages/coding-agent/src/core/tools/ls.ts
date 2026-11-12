@@ -122,7 +122,8 @@ export function createLsToolDefinition(
 				(async () => {
 					try {
 						const dirPath = resolveToCwd(path || ".", cwd);
-						const effectiveLimit = limit ?? DEFAULT_LIMIT;
+						// A limit below 1 means 1 instead of matching nothing.
+						const effectiveLimit = Math.max(1, Math.floor(limit ?? DEFAULT_LIMIT));
 
 						// Check if path exists.
 						if (!(await ops.exists(dirPath))) {
