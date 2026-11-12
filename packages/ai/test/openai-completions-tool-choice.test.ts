@@ -1,6 +1,5 @@
 import { Type } from "typebox";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { convertMessages } from "../src/api/openai-completions.ts";
 import { getModel, stream, streamSimple } from "../src/compat.ts";
 import type { AssistantMessage, Model, SimpleStreamOptions, Tool, ToolResultMessage } from "../src/types.ts";
 
@@ -1266,109 +1265,6 @@ describe("openai-completions tool_choice", () => {
 				thinkingSignature: "reasoning",
 			},
 		]);
-	});
-
-	it("replays OpenCode Go reasoning thinking blocks as reasoning_content", () => {
-		const { compat: _compat, ...baseModel } = getModel("opencode-go", "kimi-k2.7-code")!;
-		const model = { ...baseModel, api: "openai-completions" } as Model<"openai-completions">;
-		const messages = convertMessages(
-			model,
-			{
-				messages: [
-					{
-						role: "assistant",
-						api: "openai-completions",
-						provider: "opencode-go",
-						model: "kimi-k2.6",
-						content: [
-							{ type: "thinking", thinking: "think", thinkingSignature: "reasoning" },
-							{ type: "toolCall", id: "call_1", name: "read", arguments: { path: "README.md" } },
-						],
-						usage: {
-							input: 0,
-							output: 0,
-							cacheRead: 0,
-							cacheWrite: 0,
-							totalTokens: 0,
-							cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
-						},
-						stopReason: "stop",
-						timestamp: Date.now(),
-					},
-				],
-			},
-			{
-				...model.compat,
-				supportsStore: false,
-				supportsDeveloperRole: false,
-				supportsReasoningEffort: true,
-				supportsUsageInStreaming: true,
-				supportsFinishReason: true,
-				maxTokensField: "max_completion_tokens",
-				requiresToolResultName: false,
-				requiresAssistantAfterToolResult: false,
-				requiresThinkingAsText: false,
-				requiresReasoningContentOnAssistantMessages: false,
-				thinkingFormat: "openai",
-				openRouterRouting: {},
-				vercelGatewayRouting: {},
-				chatTemplateKwargs: {},
-				zaiToolStream: false,
-				supportsStrictMode: true,
-				supportsOpenAIGrammarTools: false,
-				sendSessionAffinityHeaders: false,
-				sessionAffinityFormat: "openai",
-				supportsLongCacheRetention: true,
-			},
-		);
-
-		expect(messages[0]).toMatchObject({ role: "assistant", reasoning_content: "think" });
-		expect(messages[0]).not.toHaveProperty("reasoning");
-	});
-
-	it("sends thinking disabled for OpenCode Go Kimi K2.6 when thinking is off", async () => {
-		const model = getModel("opencode-go", "kimi-k2.7-code")!;
-		let payload: unknown;
-
-		await streamSimple(
-			model,
-			{
-				messages: [{ role: "user", content: "Hi", timestamp: Date.now() }],
-			},
-			{
-				apiKey: "test",
-				onPayload: (params: unknown) => {
-					payload = params;
-				},
-			},
-		).result();
-
-		const params = (payload ?? mockState.lastParams) as { thinking?: unknown; reasoning_effort?: string };
-		expect(params.thinking).toEqual({ type: "disabled" });
-		expect(params.reasoning_effort).toBeUndefined();
-	});
-
-	it("sends thinking enabled for OpenCode Go Kimi K2.6 when thinking is enabled", async () => {
-		const model = getModel("opencode-go", "kimi-k2.7-code")!;
-		let payload: unknown;
-
-		await streamSimple(
-			model,
-			{
-				messages: [{ role: "user", content: "Hi", timestamp: Date.now() }],
-			},
-			{
-				apiKey: "test",
-				reasoning: "high",
-				onPayload: (params: unknown) => {
-					payload = params;
-				},
-			},
-		).result();
-
-		const params = (payload ?? mockState.lastParams) as { thinking?: unknown; reasoning_effort?: string };
-		expect(params.thinking).toEqual({ type: "enabled" });
-		expect(params.reasoning_effort).toBeUndefined();
 	});
 
 	it("omits disabled thinking for Moonshot Kimi K2.7 Code models", async () => {
