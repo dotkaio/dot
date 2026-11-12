@@ -12,25 +12,7 @@ done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 CLI_ENTRY="$SCRIPT_DIR/packages/coding-agent/src/cli.ts"
 SOURCE_PATHS_REGISTER="$SCRIPT_DIR/scripts/register-source-paths.mjs"
-
-if [[ ! -d "$SCRIPT_DIR/node_modules" ]]; then
-  printf 'dot: dependencies are not installed; run "npm ci --ignore-scripts"  in %s\n' "$SCRIPT_DIR" >&2
-  exit 1
-fi
-
-if [[ ! -f "$CLI_ENTRY" ]]; then
-  printf 'dot: source entry point not found: %s\n' "$CLI_ENTRY" >&2
-  exit 1
-fi
-
-if [[ ! -f "$SOURCE_PATHS_REGISTER" ]]; then
-  printf 'dot: source path register not found: %s\n' "$SOURCE_PATHS_REGISTER" >&2
-  exit 1
-fi
-
-if [[ -z "${NODE_COMPILE_CACHE:-}" ]]; then
-  export NODE_COMPILE_CACHE="$SCRIPT_DIR/node_modules/.cache/dot-node-compile-cache"
-fi
+BOOTSTRAP_RUNTIME="$SCRIPT_DIR/scripts/bootstrap-runtime.sh"
 
 # Check for --no-env flag
 NO_ENV=false
@@ -83,4 +65,24 @@ if [[ "$NO_ENV" == "true" ]]; then
   echo "Running without API keys..."
 fi
 
-exec node --import "$SOURCE_PATHS_REGISTER" "$CLI_ENTRY" ${ARGS[@]+"${ARGS[@]}"}
+if [[ -f "$SCRIPT_DIR/node_modules/.package-lock.json" ]] && command -v node >/dev/null 2>&1; then
+  if [[ ! -f "$CLI_ENTRY" ]]; then
+    printf 'dot: source entry point not found: %s\n' "$CLI_ENTRY" >&2
+    exit 1
+  fi
+  if [[ ! -f "$SOURCE_PATHS_REGISTER" ]]; then
+    printf 'dot: source path register not found: %s\n' "$SOURCE_PATHS_REGISTER" >&2
+    exit 1
+  fi
+  if [[ -z "${NODE_COMPILE_CACHE:-}" ]]; then
+    export NODE_COMPILE_CACHE="$SCRIPT_DIR/node_modules/.cache/dot-node-compile-cache"
+  fi
+  exec node --import "$SOURCE_PATHS_REGISTER" "$CLI_ENTRY" ${ARGS[@]+"${ARGS[@]}"}
+fi
+
+if [[ ! -x "$BOOTSTRAP_RUNTIME" ]]; then
+  printf 'dot: runtime bootstrap not found or not executable: %s\n' "$BOOTSTRAP_RUNTIME" >&2
+  exit 1
+fi
+RUNTIME_BINARY="$($BOOTSTRAP_RUNTIME)"
+exec "$RUNTIME_BINARY" ${ARGS[@]+"${ARGS[@]}"}

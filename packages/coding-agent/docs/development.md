@@ -5,19 +5,12 @@ See [AGENTS.md](https://github.com/dotkaio/dot/blob/main/AGENTS.md) for addition
 ## Setup
 
 ```bash
-git clone https://github.com/dotkaio/dot
+git clone https://github.com/dotkaio/dot.git
 cd dot
-npm install
-npm run build
+./dot.sh
 ```
 
-Run from source:
-
-```bash
-/path/to/dot/dot.sh
-```
-
-The script can be run from any directory. Dot keeps the caller's current working directory.
+No Node.js or npm install is required. The launcher downloads and verifies a prebuilt binary for your platform on first launch, or runs the TypeScript source directly with Node when dependencies are already installed. On Windows, run `dot.bat`. The launcher can be run by absolute path from any directory and keeps the caller's current working directory.
 
 ## Forking / Rebranding
 
