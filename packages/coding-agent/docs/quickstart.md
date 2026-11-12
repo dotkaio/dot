@@ -12,6 +12,19 @@ npm install -g --ignore-scripts @dotkaio/dot
 
 `--ignore-scripts` disables dependency lifecycle scripts during install. Dot does not require install scripts for normal npm installs.
 
+### Run from a source clone
+
+No Node.js or npm install required. On first launch the launcher downloads and verifies a prebuilt binary for your platform from the latest GitHub release, or runs the TypeScript source directly with Node when dependencies are already installed.
+
+```bash
+git clone https://github.com/dotkaio/dot.git
+cd dot
+./dot.sh        # macOS / Linux
+dot.bat         # Windows
+```
+
+The launcher can also be called by absolute path from another project because it preserves the caller's working directory.
+
 ### Uninstall
 
 Use the package manager that installed dot. The curl installer uses npm globally, so curl and npm installs are removed with npm:

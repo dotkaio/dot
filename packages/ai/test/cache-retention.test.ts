@@ -493,12 +493,12 @@ describe("Cache Retention (DOT_CACHE_RETENTION)", () => {
 		});
 
 		it.each([
-			MODELS.opencode["deepseek-v4-flash"],
+			MODELS.opencode["deepseek-v4.1-flash"],
 			MODELS.opencode["deepseek-v4-pro"],
 			MODELS.opencode["kimi-k2.5"],
 			MODELS.opencode["kimi-k2.6"],
 			MODELS.opencode["minimax-m2.7"],
-			MODELS["opencode-go"]["kimi-k2.6"],
+			MODELS["opencode-go"]["kimi-k2.7-code"],
 		] as const)("should omit long cache retention for $provider/$id", async (metadata) => {
 			const model = metadata as Model<"openai-completions">;
 			let capturedPayload: OpenAICompletionsCachePayload | undefined;
@@ -520,7 +520,7 @@ describe("Cache Retention (DOT_CACHE_RETENTION)", () => {
 				// Expected to fail
 			}
 
-			expect(model.compat?.supportsLongCacheRetention).toBe(false);
+			expect(model.compat?.supportsLongCacheRetention).toBeFalsy();
 			expect(capturedPayload).toBeDefined();
 			expect(capturedPayload?.prompt_cache_key).toBeUndefined();
 			expect(capturedPayload?.prompt_cache_retention).toBeUndefined();

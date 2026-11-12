@@ -11,6 +11,19 @@ dot
 
 Authenticate with `/login`, select a model with `/model`, and start working.
 
+### Run from a clone
+
+No Node.js or npm install required. On first launch the launcher downloads and verifies a prebuilt binary for macOS, Linux, or Windows from the latest [GitHub release](https://github.com/dotkaio/dot/releases). When dependencies are already installed locally, it runs the TypeScript source directly with Node instead.
+
+```bash
+git clone https://github.com/dotkaio/dot.git
+cd dot
+./dot.sh        # macOS / Linux
+dot.bat         # Windows
+```
+
+The launcher preserves the directory it was invoked from, so it can be called by absolute path from any project.
+
 See the [coding-agent README](packages/coding-agent/README.md) and [documentation](packages/coding-agent/docs/index.md).
 
 ## Packages
@@ -31,10 +44,9 @@ See the [coding-agent README](packages/coding-agent/README.md) and [documentatio
 ## Development
 
 ```bash
-npm install --ignore-scripts
+./dot.sh
 npm run check
 ./test.sh
-./dot.sh
 ```
 
 Use `npm run build:offline` to build from the checked-in model data, or `npm run build` to refresh provider metadata first.

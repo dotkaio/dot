@@ -127,7 +127,7 @@ describe("Context overflow error handling", () => {
 		it.skipIf(!githubCopilotToken)(
 			"gemini-3.5-flash - should detect overflow via isContextOverflow",
 			async () => {
-				const model = getModel("github-copilot", "gemini-3.5-flash");
+				const model = getModel("github-copilot", "gemini-3.8-flash");
 				const result = await testContextOverflow(model, githubCopilotToken!);
 				logResult(result);
 
@@ -338,7 +338,7 @@ describe("Context overflow error handling", () => {
 
 	describe.skipIf(!process.env.TOGETHER_API_KEY)("Together AI", () => {
 		it("Kimi-K2.6 - should detect overflow via isContextOverflow", async () => {
-			const model = getModel("together", "moonshotai/Kimi-K2.6");
+			const model = getModel("together", "moonshotai/Kimi-K3");
 			const result = await testContextOverflow(model, process.env.TOGETHER_API_KEY!);
 			logResult(result);
 
@@ -528,7 +528,7 @@ describe("Context overflow error handling", () => {
 	describe.skipIf(!process.env.OPENROUTER_API_KEY)("OpenRouter", () => {
 		// Anthropic backend
 		it("anthropic/claude-sonnet-4 via OpenRouter - should detect overflow via isContextOverflow", async () => {
-			const model = getModel("openrouter", "anthropic/claude-sonnet-4");
+			const model = getModel("openrouter", "anthropic/claude-sonnet-4.5");
 			const result = await testContextOverflow(model, process.env.OPENROUTER_API_KEY!);
 			logResult(result);
 

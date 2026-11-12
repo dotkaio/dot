@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$installLockPath = Join-Path $scriptDir "node_modules/.package-lock.json"
+$runFromSource = (Test-Path -LiteralPath $installLockPath -PathType Leaf) -and [bool](Get-Command node -ErrorAction SilentlyContinue)
 $noEnv = $false
 $forwardArgs = New-Object System.Collections.Generic.List[string]
 
@@ -58,13 +60,23 @@ if ($noEnv) {
 	Write-Host "Running without API keys..."
 }
 
-$tsxBin = Join-Path $scriptDir "node_modules/.bin/tsx.cmd"
-if (-not (Test-Path -LiteralPath $tsxBin)) {
-	throw "tsx not found at $tsxBin. Run npm install from the repo root first."
+if ($runFromSource) {
+	$tsxBin = Join-Path $scriptDir "node_modules/.bin/tsx.cmd"
+	if (-not (Test-Path -LiteralPath $tsxBin -PathType Leaf)) {
+		throw "tsx not found at $tsxBin. Run npm ci --ignore-scripts from the repo root."
+	}
+
+	$cliPath = Join-Path $scriptDir "packages/coding-agent/src/cli.ts"
+	& $tsxBin $cliPath @forwardArgs
+} else {
+	$bootstrapPath = Join-Path $scriptDir "scripts/bootstrap-runtime.ps1"
+	if (-not (Test-Path -LiteralPath $bootstrapPath -PathType Leaf)) {
+		throw "dot: runtime bootstrap not found: $bootstrapPath"
+	}
+	$runtimePath = & $bootstrapPath
+	& $runtimePath @forwardArgs
 }
 
-$cliPath = Join-Path $scriptDir "packages/coding-agent/src/cli.ts"
-& $tsxBin $cliPath @forwardArgs
 $exitCode = $LASTEXITCODE
 if ($exitCode -ne 0) {
 	exit $exitCode

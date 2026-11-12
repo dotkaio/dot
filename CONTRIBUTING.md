@@ -30,7 +30,6 @@ Do not include unrelated formatting, generated files, dependency updates, or loc
 ```bash
 git clone https://github.com/dotkaio/dot.git
 cd dot
-npm install --ignore-scripts
 ./dot.sh
 ```
 
